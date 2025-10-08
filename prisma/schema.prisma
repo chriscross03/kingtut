@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -14,11 +11,202 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Example model - you can modify or remove this
+// ===== CONTENT HIERARCHY =====
+
+model Course {
+  id            Int             @id @default(autoincrement())
+  name          String          @unique // "SAT Math", "SAT English"
+  description   String?
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  // Relations
+  learningAreas LearningArea[]
+  proficiencies CourseProficiency[]
+}
+
+model LearningArea {
+  id            Int             @id @default(autoincrement())
+  name          String          // "Information and Ideas", "Craft and Structure"
+  description   String?
+  courseId      Int
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  // Relations
+  course        Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  difficultyLevels DifficultyLevel[]
+  proficiencies LearningAreaProficiency[]
+}
+
+model DifficultyLevel {
+  id            Int             @id @default(autoincrement())
+  name          String          // "Beginner", "Intermediate", "Hard"
+  level         Int             // 1, 2, 3 for ordering
+  learningAreaId Int
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  // Relations
+  learningArea  LearningArea    @relation(fields: [learningAreaId], references: [id], onDelete: Cascade)
+  skills        Skill[]
+}
+
+model Skill {
+  id                Int             @id @default(autoincrement())
+  name              String          // "Radicals", "Polynomials"
+  description       String?
+  difficultyLevelId Int
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  
+  // Relations
+  difficultyLevel   DifficultyLevel @relation(fields: [difficultyLevelId], references: [id], onDelete: Cascade)
+  questionSets      QuestionSet[]
+  proficiencies     SkillProficiency[]
+}
+
+model QuestionSet {
+  id            Int             @id @default(autoincrement())
+  number        Int             // 1, 2, 3, 4, 5
+  skillId       Int
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  // Relations
+  skill         Skill           @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  questions     Question[]
+  quizAttempts  QuizAttempt[]
+}
+
+model Question {
+  id            Int             @id @default(autoincrement())
+  questionText  String
+  options       Json            // ["A", "B", "C", "D"] or multiple choice options
+  correctAnswer String
+  explanation   String?
+  questionSetId Int
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  // Relations
+  questionSet   QuestionSet     @relation(fields: [questionSetId], references: [id], onDelete: Cascade)
+  answers       QuestionAnswer[]
+}
+
+// ===== USER PROGRESS TRACKING =====
+
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  // Relations
+  quizAttempts           QuizAttempt[]
+  questionAnswers        QuestionAnswer[]
+  skillProficiencies     SkillProficiency[]
+  learningAreaProficiencies LearningAreaProficiency[]
+  courseProficiencies    CourseProficiency[]
+}
+
+model QuizAttempt {
+  id            Int             @id @default(autoincrement())
+  userId        Int
+  questionSetId Int
+  score         Float?          // Percentage score (0-100)
+  startedAt     DateTime        @default(now())
+  completedAt   DateTime?
+  timeSpent     Int?            // Time in seconds
+  isCompleted   Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  // Relations
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionSet   QuestionSet     @relation(fields: [questionSetId], references: [id], onDelete: Cascade)
+  answers       QuestionAnswer[]
+}
+
+model QuestionAnswer {
+  id            Int             @id @default(autoincrement())
+  userId        Int
+  quizAttemptId Int
+  questionId    Int
+  userAnswer    String          // User's selected answer
+  isCorrect     Boolean
+  timeSpent     Int?            // Time in seconds for this question
+  createdAt     DateTime        @default(now())
+  
+  // Relations
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizAttempt   QuizAttempt     @relation(fields: [quizAttemptId], references: [id], onDelete: Cascade)
+  question      Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+// ===== PROFICIENCY TRACKING =====
+
+enum ProficiencyLevel {
+  BEGINNING
+  INTERMEDIATE
+  ADVANCED
+  SIGMA
+}
+
+model SkillProficiency {
+  id                Int             @id @default(autoincrement())
+  userId            Int
+  skillId           Int
+  level             ProficiencyLevel
+  score             Float           // Average score across all attempts
+  questionsAnswered Int             // Total questions answered
+  questionSetsCompleted Int         // Number of question sets completed (1-5)
+  lastUpdated       DateTime        @default(now())
+  
+  // Relations
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill             Skill           @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, skillId])
+}
+
+model LearningAreaProficiency {
+  id                Int             @id @default(autoincrement())
+  userId            Int
+  learningAreaId    Int
+  level             ProficiencyLevel
+  score             Float           // Average score from all skills
+  skillsCompleted   Int             // Number of skills with proficiency
+  totalSkills       Int             // Total skills in learning area
+  lastUpdated       DateTime        @default(now())
+  
+  // Relations
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  learningArea      LearningArea    @relation(fields: [learningAreaId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, learningAreaId])
+}
+
+model CourseProficiency {
+  id                    Int             @id @default(autoincrement())
+  userId                Int
+  courseId              Int
+  level                 ProficiencyLevel
+  score                 Float           // Average score from all learning areas
+  learningAreasCompleted Int            // Number of learning areas with proficiency
+  totalLearningAreas   Int             // Total learning areas in course
+  lastUpdated           DateTime        @default(now())
+  
+  // Relations
+  user                  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course                Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, courseId])
 }
