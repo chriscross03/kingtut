@@ -1,14 +1,11 @@
-export default function expression() {
+export default function Tip() {
   return (
-    <div
-      style={{
-        padding: "2rem",
-        fontFamily: "sans-serif",
-        maxWidth: "800px",
-        margin: "0 auto",
-      }}
-    >
-      <p>ayo tip??</p>
+    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+      <h1>SAT Math Practice</h1>
+      <p>
+        Review key math concepts for the SAT, including algebra, problem
+        solving, and data analysis.
+      </p>
     </div>
   );
 }
