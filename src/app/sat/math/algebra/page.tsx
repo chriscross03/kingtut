@@ -1,4 +1,4 @@
-export default function expression() {
+export default function algebra() {
   return (
     <div
       style={{
@@ -8,7 +8,7 @@ export default function expression() {
         margin: "0 auto",
       }}
     >
-      <p>ayo tip??</p>
+      <p>algebruh</p>
     </div>
   );
 }

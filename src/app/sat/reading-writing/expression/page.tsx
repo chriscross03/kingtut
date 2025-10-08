@@ -8,7 +8,7 @@ export default function expression() {
         margin: "0 auto",
       }}
     >
-      <p>ayo tip??</p>
+      <p>expression stuff</p>
     </div>
   );
 }
