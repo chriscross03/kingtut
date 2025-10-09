@@ -26,6 +26,17 @@ export default function Home() {
       >
         Go to SAT Practice →
       </Link>
+      <br />
+      <Link
+        href="/add-question"
+        style={{
+          textDecoration: "none",
+          color: "#1a73e8",
+          fontSize: "1.2rem",
+        }}
+      >
+        Add Question (dev)
+      </Link>
     </div>
   );
 }
