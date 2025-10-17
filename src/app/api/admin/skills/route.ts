@@ -1,9 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "../../../../generated/prisma";
+import slugify from "slugify";
+import type {
+  Skill,
+  DifficultyLevel,
+  LearningArea,
+  Course,
+} from "../../../../generated/prisma";
 
 const prisma = new PrismaClient();
 
-export async function POST(request: NextRequest) {
+// Type for nested relations
+type LearningAreaWithCourse = LearningArea & {
+  course: Course;
+};
+
+type DifficultyLevelWithRelations = DifficultyLevel & {
+  learningArea: LearningAreaWithCourse;
+};
+
+type SkillWithRelations = Skill & {
+  difficultyLevel: DifficultyLevelWithRelations;
+};
+
+// Response types
+interface SkillResponse {
+  message: string;
+  skill: SkillWithRelations;
+}
+
+interface SkillsResponse {
+  skills: SkillWithRelations[];
+}
+
+interface ErrorResponse {
+  error: string;
+}
+
+export async function POST(
+  request: NextRequest
+): Promise<NextResponse<SkillResponse | ErrorResponse>> {
   try {
     const body = await request.json();
     const {
@@ -36,11 +72,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate slug from name
+    const slug = slugify(name, { lower: true, strict: true });
+
     // Verify the learning area exists
-    const learningArea = await prisma.learningArea.findUnique({
-      where: { id: parseInt(learningAreaId) },
-      include: { course: true },
-    });
+    const learningArea: LearningAreaWithCourse | null =
+      await prisma.learningArea.findUnique({
+        where: { id: parseInt(learningAreaId) },
+        include: { course: true },
+      });
 
     if (!learningArea) {
       return NextResponse.json(
@@ -50,7 +90,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if skill with this name already exists in this learning area
-    const existingSkill = await prisma.skill.findFirst({
+    const existingSkill: Skill | null = await prisma.skill.findFirst({
       where: {
         name,
         difficultyLevel: {
@@ -69,17 +109,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Find or create the difficulty level
-    let difficultyLevel = await prisma.difficultyLevel.findFirst({
-      where: {
-        name: difficulty,
-        learningAreaId: parseInt(learningAreaId),
-      },
-    });
+    let difficultyLevel: DifficultyLevel | null =
+      await prisma.difficultyLevel.findFirst({
+        where: {
+          name: difficulty,
+          learningAreaId: parseInt(learningAreaId),
+        },
+      });
 
     if (!difficultyLevel) {
       // Create the difficulty level if it doesn't exist
       const levelNumber =
         difficulty === "Beginner" ? 1 : difficulty === "Intermediate" ? 2 : 3;
+
       difficultyLevel = await prisma.difficultyLevel.create({
         data: {
           name: difficulty,
@@ -90,9 +132,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the skill
-    const skill = await prisma.skill.create({
+    const skill: SkillWithRelations = await prisma.skill.create({
       data: {
         name,
+        slug,
         description: description || null,
         difficultyLevelId: difficultyLevel.id,
         isActive,
@@ -126,9 +169,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(): Promise<
+  NextResponse<SkillsResponse | ErrorResponse>
+> {
   try {
-    const skills = await prisma.skill.findMany({
+    const skills: SkillWithRelations[] = await prisma.skill.findMany({
       include: {
         difficultyLevel: {
           include: {
