@@ -16,7 +16,7 @@ datasource db {
 model Course {
   id            Int             @id @default(autoincrement())
   name          String          @unique // "SAT Math", "SAT English"
-  slug          String?         @unique // "sat-math"
+  slug          String          @unique // "sat-math"
   description   String?
   isActive      Boolean         @default(true)
   createdAt     DateTime        @default(now())
@@ -30,6 +30,7 @@ model Course {
 model LearningArea {
   id            Int             @id @default(autoincrement())
   name          String          // "Information and Ideas", "Craft and Structure"
+  slug          String?         @unique
   description   String?
   courseId      Int
   isActive      Boolean         @default(true)
@@ -45,6 +46,7 @@ model LearningArea {
 model DifficultyLevel {
   id            Int             @id @default(autoincrement())
   name          String          // "Beginner", "Intermediate", "Hard"
+  slug          String?         
   level         Int             // 1, 2, 3 for ordering
   learningAreaId Int
   isActive      Boolean         @default(true)
@@ -59,6 +61,7 @@ model DifficultyLevel {
 model Skill {
   id                Int             @id @default(autoincrement())
   name              String          // "Radicals", "Polynomials"
+  slug              String?         @unique
   description       String?
   difficultyLevelId Int
   isActive          Boolean         @default(true)

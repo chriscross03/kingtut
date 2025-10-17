@@ -1,10 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "../../../../generated/prisma";
 import slugify from "slugify";
+import type { Course } from "../../../../generated/prisma";
 
 const prisma = new PrismaClient();
 
-export async function POST(request: NextRequest) {
+interface CourseResponse {
+  message: string;
+  course: Course;
+}
+
+interface CoursesResponse {
+  courses: Course[];
+}
+
+interface ErrorResponse {
+  error: string;
+}
+
+export async function POST(
+  request: NextRequest
+): Promise<NextResponse<CourseResponse | ErrorResponse>> {
   try {
     const body = await request.json();
     const { name, description, isActive = true } = body;
@@ -19,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if course with this name already exists
-    const existingCourse = await prisma.course.findUnique({
+    const existingCourse: Course | null = await prisma.course.findUnique({
       where: { name },
     });
 
@@ -31,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the course
-    const course = await prisma.course.create({
+    const course: Course = await prisma.course.create({
       data: {
         name,
         slug,
@@ -56,9 +72,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(): Promise<
+  NextResponse<CoursesResponse | ErrorResponse>
+> {
   try {
-    const courses = await prisma.course.findMany({
+    const courses: Course[] = await prisma.course.findMany({
       orderBy: { createdAt: "desc" },
     });
 

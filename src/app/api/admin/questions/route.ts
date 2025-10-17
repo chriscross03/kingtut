@@ -1,9 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "../../../../generated/prisma";
+import type {
+  Question,
+  QuestionSet,
+  Skill,
+  DifficultyLevel,
+  LearningArea,
+  Course,
+} from "../../../../generated/prisma";
 
 const prisma = new PrismaClient();
 
-export async function POST(request: NextRequest) {
+// Type for nested relations
+type LearningAreaWithCourse = LearningArea & {
+  course: Course;
+};
+
+type DifficultyLevelWithRelations = DifficultyLevel & {
+  learningArea: LearningAreaWithCourse;
+};
+
+type SkillWithRelations = Skill & {
+  difficultyLevel: DifficultyLevelWithRelations;
+};
+
+type QuestionSetWithRelations = QuestionSet & {
+  skill: SkillWithRelations;
+};
+
+type QuestionWithRelations = Question & {
+  questionSet: QuestionSetWithRelations;
+};
+
+// Response types
+interface QuestionResponse {
+  message: string;
+  question: QuestionWithRelations;
+}
+
+interface QuestionsResponse {
+  questions: QuestionWithRelations[];
+}
+
+interface ErrorResponse {
+  error: string;
+}
+
+export async function POST(
+  request: NextRequest
+): Promise<NextResponse<QuestionResponse | ErrorResponse>> {
   try {
     const body = await request.json();
     const {
@@ -44,25 +89,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const parsedQuestionSetId = parseInt(questionSetId);
+
     // Verify the question set exists
-    const questionSet = await prisma.questionSet.findUnique({
-      where: { id: parseInt(questionSetId) },
-      include: {
-        skill: {
-          include: {
-            difficultyLevel: {
-              include: {
-                learningArea: {
-                  include: {
-                    course: true,
+    const questionSet: QuestionSetWithRelations | null =
+      await prisma.questionSet.findUnique({
+        where: { id: parsedQuestionSetId },
+        include: {
+          skill: {
+            include: {
+              difficultyLevel: {
+                include: {
+                  learningArea: {
+                    include: {
+                      course: true,
+                    },
                   },
                 },
               },
             },
           },
         },
-      },
-    });
+      });
 
     if (!questionSet) {
       return NextResponse.json(
@@ -72,7 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse options if it's a string
-    let parsedOptions;
+    let parsedOptions: string[];
     try {
       parsedOptions =
         typeof options === "string" ? JSON.parse(options) : options;
@@ -83,14 +131,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate parsedOptions is an array
+    if (!Array.isArray(parsedOptions)) {
+      return NextResponse.json(
+        { error: "Options must be an array" },
+        { status: 400 }
+      );
+    }
+
     // Create the question
-    const question = await prisma.question.create({
+    const question: QuestionWithRelations = await prisma.question.create({
       data: {
         questionText,
         options: parsedOptions,
         correctAnswer,
         explanation: explanation || null,
-        questionSetId: parseInt(questionSetId),
+        questionSetId: parsedQuestionSetId,
         isActive,
       },
       include: {
@@ -130,9 +186,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(): Promise<
+  NextResponse<QuestionsResponse | ErrorResponse>
+> {
   try {
-    const questions = await prisma.question.findMany({
+    const questions: QuestionWithRelations[] = await prisma.question.findMany({
       include: {
         questionSet: {
           include: {
