@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export default function SATPage() {
+export default function CoursesPage() {
   const lessons = [
     { title: "Reading and Writing Practice", href: "/sat/reading-writing" },
     { title: "Math Practice", href: "/sat/math" },
@@ -17,9 +17,9 @@ export default function SATPage() {
         margin: "0 auto",
       }}
     >
-      <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>SAT Practice</h1>
+      <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>Courses</h1>
       <p style={{ fontSize: "1.1rem", color: "#555", marginBottom: "2rem" }}>
-        Explore lessons and resources to help you prepare for the SAT.
+        Explore lessons and resources to help you learn.
       </p>
 
       <ul style={{ listStyle: "none", padding: 0 }}>

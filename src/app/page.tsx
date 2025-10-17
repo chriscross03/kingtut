@@ -17,7 +17,7 @@ export default function Home() {
       <p>Choose a subject to get started:</p>
 
       <Link
-        href="/sat"
+        href="/courses"
         style={{
           textDecoration: "none",
           color: "#1a73e8",
@@ -28,7 +28,7 @@ export default function Home() {
       </Link>
       <br />
       <Link
-        href="/add-question"
+        href="/admin"
         style={{
           textDecoration: "none",
           color: "#1a73e8",
