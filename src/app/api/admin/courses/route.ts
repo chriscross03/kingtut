@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "../../../../generated/prisma";
+import slugify from "slugify";
 
 const prisma = new PrismaClient();
 
@@ -7,6 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { name, description, isActive = true } = body;
+    const slug = slugify(name, { lower: true, strict: true });
 
     // Validate required fields
     if (!name) {
@@ -32,6 +34,7 @@ export async function POST(request: NextRequest) {
     const course = await prisma.course.create({
       data: {
         name,
+        slug,
         description: description || null,
         isActive,
       },
