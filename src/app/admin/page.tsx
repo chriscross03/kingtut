@@ -48,12 +48,22 @@ export default function AdminPage() {
       let response;
 
       if (activeTab === "course") {
+        // Generate slug from course name
+        const slug = formData.name
+          ?.toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, "")
+          .replace(/\s+/g, "-")
+          .replace(/-+/g, "-")
+          .trim();
+
+        const courseData = { ...formData, slug };
+
         response = await fetch("/api/admin/courses", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(courseData),
         });
       } else if (activeTab === "learningArea") {
         response = await fetch("/api/admin/learning-areas", {
