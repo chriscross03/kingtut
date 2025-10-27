@@ -30,7 +30,7 @@ model Course {
 model LearningArea {
   id            Int             @id @default(autoincrement())
   name          String          // "Information and Ideas", "Craft and Structure"
-  slug          String?         @unique
+  slug          String         @unique
   description   String?
   courseId      Int
   isActive      Boolean         @default(true)
@@ -61,7 +61,7 @@ model DifficultyLevel {
 model Skill {
   id                Int             @id @default(autoincrement())
   name              String          // "Radicals", "Polynomials"
-  slug              String?         @unique
+  slug              String         
   description       String?
   difficultyLevelId Int
   isActive          Boolean         @default(true)
