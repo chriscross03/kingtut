@@ -38,11 +38,7 @@ export default function CoursesPage() {
         Explore lessons and resources to help you learn.
       </p>
 
-      {courses.data.length === 0 ? (
-        <p>No courses available at the moment.</p>
-      ) : (
-        <CourseList courses={courses.data} />
-      )}
+      {<CourseList courses={courses.data} />}
     </div>
   );
 }

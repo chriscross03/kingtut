@@ -4,72 +4,48 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useFetchResource } from "../../../hooks/useFetchResource";
 import type { Course, LearningArea } from "../../../generated/prisma";
+import { useMemo } from "react";
+import {
+  CoursePageError,
+  CoursePageLoading,
+  CoursePageEmpty,
+} from "./components";
 
 interface CourseWithLearningAreas extends Course {
   learningAreas?: LearningArea[];
 }
 
 export default function CoursePage() {
+  const sortFn = useMemo(
+    () => (a: Course, b: Course) => {
+      if (!a || !b) return 0; // handle nulls gracefully
+      return a.name.localeCompare(b.name);
+    },
+    []
+  );
+
   const params = useParams();
   const courseSlug = params.slug as string;
 
   // Fetch the specific course by slug
   const course = useFetchResource<CourseWithLearningAreas>(
-    `/api/courses/slug/${courseSlug}`
+    `/api/courses/${courseSlug}`,
+    sortFn
   );
+  console.log(course);
 
   if (course.loading) {
-    return (
-      <div
-        style={{
-          padding: "2rem",
-          fontFamily: "sans-serif",
-          maxWidth: "800px",
-          margin: "0 auto",
-        }}
-      >
-        <h1>Loading course...</h1>
-      </div>
-    );
+    return <CoursePageLoading />;
   }
 
   if (course.error) {
-    return (
-      <div
-        style={{
-          padding: "2rem",
-          fontFamily: "sans-serif",
-          maxWidth: "800px",
-          margin: "0 auto",
-        }}
-      >
-        <h1>Course not found</h1>
-        <p style={{ color: "red" }}>Error: {course.error.message}</p>
-        <Link href="/courses" style={{ color: "#1a73e8" }}>
-          ← Back to courses
-        </Link>
-      </div>
-    );
+    return <CoursePageError error={course.error} />;
   }
 
   const courseData = course.data[0]; // Since we're fetching a specific course
 
   if (!courseData) {
-    return (
-      <div
-        style={{
-          padding: "2rem",
-          fontFamily: "sans-serif",
-          maxWidth: "800px",
-          margin: "0 auto",
-        }}
-      >
-        <h1>Course not found</h1>
-        <Link href="/courses" style={{ color: "#1a73e8" }}>
-          ← Back to courses
-        </Link>
-      </div>
-    );
+    return <CoursePageEmpty />;
   }
 
   return (
