@@ -137,6 +137,7 @@ export async function POST(
         name,
         slug,
         description: description || null,
+        learningAreaId: parseInt(learningAreaId),
         difficultyLevelId: difficultyLevel.id,
         isActive,
       },
