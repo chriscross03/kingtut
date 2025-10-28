@@ -5,130 +5,69 @@ import Link from "next/link";
 import { useFetchResource } from "../../../hooks/useFetchResource";
 import type { Course, LearningArea } from "../../../generated/prisma";
 import { useMemo } from "react";
-import {
-  CoursePageError,
-  CoursePageLoading,
-  CoursePageEmpty,
-} from "./components";
 import BackLink from "@/components/BackLink";
+import ResourceList from "../components/ResourceList";
+import PageLayout from "../components/PageLayout";
 
 interface CourseWithLearningAreas extends Course {
   learningAreas?: LearningArea[];
 }
 
 export default function CoursePage() {
-  const sortFn = useMemo(
-    () => (a: Course, b: Course) => {
-      if (!a || !b) return 0; // handle nulls gracefully
-      return a.name.localeCompare(b.name);
-    },
-    []
-  );
-
   const params = useParams();
   const courseSlug = params.slug as string;
 
-  // Fetch the specific course by slug
+  const sortFn = useMemo(
+    () => (a: Course, b: Course) => a.name.localeCompare(b.name),
+    []
+  );
+
   const course = useFetchResource<CourseWithLearningAreas>(
     `/api/courses/${courseSlug}`,
     sortFn
   );
-  console.log({
-    loading: course.loading,
-    data: course.data,
-    error: course.error,
-  });
 
+  // Grab the first item (since it's a single course endpoint)
+  const courseData = course.data[0];
+
+  // Handle loading state
   if (course.loading) {
-    return <CoursePageLoading />;
+    return (
+      <div className="flex justify-center items-center py-16">
+        <p className="text-gray-500 text-lg">Loading course...</p>
+      </div>
+    );
   }
 
+  // Handle error state
   if (course.error) {
-    return <CoursePageError error={course.error} />;
+    return (
+      <div className="bg-red-100 text-red-700 p-4 rounded-md max-w-xl mx-auto mt-8">
+        <p>Error: {course.error.message}</p>
+      </div>
+    );
   }
-  console.log(course.data);
-  const courseData = course.data[0]; // Since we're fetching a specific course
 
+  // Handle empty course
   if (!courseData) {
-    return <CoursePageEmpty />;
+    return (
+      <div className="text-gray-600 italic text-center py-16">
+        Course not found.
+      </div>
+    );
   }
 
+  // Render the page when courseData exists
   return (
-    <div
-      style={{
-        padding: "2rem",
-        fontFamily: "sans-serif",
-        maxWidth: "800px",
-        margin: "0 auto",
-      }}
-    >
-      <BackLink href="/courses" label="back to courses page" />
+    <PageLayout title={courseData.name} subtitle={courseData.description || ""}>
+      <BackLink href="/courses" label="Back to courses" />
 
-      <h1
-        style={{ fontSize: "2.5rem", marginBottom: "1rem", marginTop: "2rem" }}
-      >
-        {courseData.name}
-      </h1>
+      <h2 className="text-2xl font-semibold mt-8 mb-4">Learning Areas</h2>
 
-      {courseData.description && (
-        <p style={{ fontSize: "1.1rem", color: "#555", marginBottom: "2rem" }}>
-          {courseData.description}
-        </p>
-      )}
-
-      <h2 style={{ fontSize: "1.8rem", marginBottom: "1rem" }}>
-        Learning Areas
-      </h2>
-
-      {courseData.learningAreas?.length === 0 ? (
-        <p>No learning areas available for this course yet.</p>
-      ) : (
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {courseData.learningAreas?.map((learningArea) => (
-            <li key={learningArea.id} style={{ marginBottom: "1rem" }}>
-              <Link
-                href={`/courses/${courseSlug}/learning-areas/${
-                  learningArea.slug || learningArea.id
-                }`}
-                style={{
-                  textDecoration: "none",
-                  color: "#1a73e8",
-                  fontSize: "1.1rem",
-                  fontWeight: "500",
-                  display: "block",
-                  padding: "1rem",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = "#f9fafb";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                <div>
-                  <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.2rem" }}>
-                    {learningArea.name}
-                  </h3>
-                  {learningArea.description && (
-                    <p
-                      style={{
-                        margin: 0,
-                        color: "#6b7280",
-                        fontSize: "0.9rem",
-                      }}
-                    >
-                      {learningArea.description}
-                    </p>
-                  )}
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+      <ResourceList
+        items={courseData.learningAreas || []}
+        basePath={`/courses/${courseData.slug}`}
+      />
+    </PageLayout>
   );
 }
