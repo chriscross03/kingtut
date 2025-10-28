@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useFetchResource } from "../../hooks/useFetchResource";
-import { Course } from "@/generated/prisma";
+import { Course, LearningArea } from "@/generated/prisma";
 import BackLink from "@/components/BackLink";
 import PageLayout from "./components/PageLayout";
 import ResourceList from "./components/ResourceList";
