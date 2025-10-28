@@ -40,6 +40,7 @@ model LearningArea {
   // Relations
   course        Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
   difficultyLevels DifficultyLevel[]
+  skill         Skill[]         @relation("LearningAreaSkills")
   proficiencies LearningAreaProficiency[]
 }
 
@@ -72,6 +73,8 @@ model Skill {
   difficultyLevel   DifficultyLevel @relation(fields: [difficultyLevelId], references: [id], onDelete: Cascade)
   questionSets      QuestionSet[]
   proficiencies     SkillProficiency[]
+  learningArea     LearningArea?   @relation("LearningAreaSkills", fields: [learningAreaId], references: [id])
+  learningAreaId   Int?
 }
 
 model QuestionSet {
