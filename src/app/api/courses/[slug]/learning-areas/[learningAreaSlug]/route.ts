@@ -1,0 +1,50 @@
+import { NextRequest, NextResponse } from "next/server";
+import { PrismaClient } from "../../../../../../generated/prisma";
+
+const prisma = new PrismaClient();
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string; learningAreaSlug: string }> }
+) {
+  try {
+    // Await the params
+    const { slug, learningAreaSlug } = await params;
+
+    // Fetch the learning area belonging to the specific course
+    const learningArea = await prisma.learningArea.findFirst({
+      where: {
+        slug: learningAreaSlug,
+        isActive: true,
+        course: { slug }, // ensures the learning area belongs to this course
+      },
+      include: {
+        difficultyLevels: {
+          where: { isActive: true },
+          orderBy: { level: "asc" },
+          include: {
+            skills: {
+              where: { isActive: true },
+              orderBy: { name: "asc" },
+            },
+          },
+        },
+      },
+    });
+
+    if (!learningArea) {
+      return NextResponse.json(
+        { error: "Learning area not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ learningAreas: [learningArea] });
+  } catch (error) {
+    console.error("Error fetching learning area:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
