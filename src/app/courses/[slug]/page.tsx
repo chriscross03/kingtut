@@ -36,5 +36,5 @@ export default function CoursePage() {
     error: course.error,
   });
 
-  return <PageLayout />;
+  return <PageLayout title={course.name} />;
 }
