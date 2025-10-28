@@ -9,6 +9,9 @@ interface CourseResponse {
   message: string;
   course: Course;
 }
+interface SuccessResponse {
+  message: string;
+}
 
 interface CoursesResponse {
   courses: Course[];

@@ -138,6 +138,42 @@ export default function AdminPage() {
     }
   };
 
+  const handleDelete = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this item?")) return;
+
+    try {
+      let endpoint = "";
+      if (activeTab === "course") endpoint = "/api/admin/courses";
+      else if (activeTab === "learningArea")
+        endpoint = "/api/admin/learning-areas";
+      else if (activeTab === "skill") endpoint = "/api/admin/skills";
+      else if (activeTab === "questionSet")
+        endpoint = "/api/admin/question-sets";
+      else if (activeTab === "question") endpoint = "/api/admin/questions";
+
+      const response = await fetch(`${endpoint}/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        alert(`${activeTab} deleted successfully!`);
+
+        // Refresh data for that tab
+        if (activeTab === "course") await courses.refresh();
+        else if (activeTab === "learningArea") await learningAreas.refresh();
+        else if (activeTab === "skill") await skills.refresh();
+        else if (activeTab === "questionSet") await questionSets.refresh();
+        else if (activeTab === "question") await questions.refresh();
+      } else {
+        const error = await response.json();
+        alert(`Error deleting ${activeTab}: ${error.error}`);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Network error occurred");
+    }
+  };
+
   const tabs = [
     { id: "course", label: "Course", icon: "📚" },
     { id: "learningArea", label: "Learning Area", icon: "🎯" },
@@ -202,91 +238,59 @@ export default function AdminPage() {
         return null;
     }
   };
+  const renderItemsList = () => {
+    let items: any[] = [];
+    if (activeTab === "course") items = courses.data;
+    else if (activeTab === "learningArea") items = learningAreas.data;
+    else if (activeTab === "skill") items = skills.data;
+    else if (activeTab === "questionSet") items = questionSets.data;
+    else if (activeTab === "question") items = questions.data;
+
+    if (!items.length) return <p className="text-gray-500">No items yet.</p>;
+
+    return (
+      <ul className="mt-6 space-y-2">
+        {items.map((item) => (
+          <li
+            key={item.id}
+            className="flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-2 rounded"
+          >
+            <span>{item.name || item.title || `ID: ${item.id}`}</span>
+            <button
+              onClick={() => handleDelete(item.id)}
+              className="text-red-500 hover:text-red-700 font-semibold"
+            >
+              Delete
+            </button>
+          </li>
+        ))}
+      </ul>
+    );
+  };
 
   return (
-    <div style={{ maxWidth: 800, margin: "32px auto", padding: 16 }}>
-      <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 24 }}>
-        Content Management
-      </h1>
+    <div className="max-w-3xl mx-auto p-4 text-gray-800 dark:text-gray-100">
+      <h1 className="text-2xl font-bold mb-6">Content Management</h1>
 
-      <p style={{ color: "#6b7280", marginBottom: 32 }}>
-        Manage your SAT prep content hierarchy from courses down to individual
-        questions.
-      </p>
-
-      {/* Tab Navigation */}
-      <div
-        style={{
-          display: "flex",
-          gap: 4,
-          marginBottom: 32,
-          borderBottom: "1px solid #e5e7eb",
-          overflowX: "auto",
-        }}
-      >
+      <div className="flex gap-1 mb-8 border-b border-gray-200 dark:border-gray-700">
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => {
-              setActiveTab(tab.id);
-              setFormData({});
-            }}
-            style={{
-              padding: "12px 16px",
-              border: "none",
-              background: activeTab === tab.id ? "#111827" : "transparent",
-              color: activeTab === tab.id ? "white" : "#6b7280",
-              cursor: "pointer",
-              borderRadius: "6px 6px 0 0",
-              whiteSpace: "nowrap",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              fontSize: 14,
-              fontWeight: 500,
-            }}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 rounded-t-md font-medium ${
+              activeTab === tab.id
+                ? "bg-gray-900 text-white"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+            }`}
           >
-            <span>{tab.icon}</span>
-            <span>{tab.label}</span>
+            {tab.icon} {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Form Content */}
-      <div
-        style={{
-          padding: 24,
-          border: "1px solid #e5e7eb",
-          borderRadius: 8,
-          background: "#fafafa",
-        }}
-      >
+      <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
         {renderForm()}
-      </div>
-
-      {/* Hierarchy Info */}
-      <div
-        style={{
-          marginTop: 32,
-          padding: 16,
-          background: "#f3f4f6",
-          borderRadius: 8,
-          fontSize: 14,
-          color: "#374151",
-        }}
-      >
-        <h4 style={{ fontWeight: 600, marginBottom: 8 }}>Content Hierarchy:</h4>
-        <div style={{ display: "grid", gap: 4 }}>
-          <div>
-            📚 <strong>Course</strong> → 🎯 <strong>Learning Area</strong> → 🔧{" "}
-            <strong>Skill</strong> → 📝 <strong>Question Set</strong> → ❓{" "}
-            <strong>Question</strong>
-          </div>
-          <div style={{ marginTop: 8, fontSize: 12, color: "#6b7280" }}>
-            Create content in order from top to bottom. Each level depends on
-            the previous one.
-          </div>
-        </div>
+        {renderItemsList()}
       </div>
     </div>
   );
