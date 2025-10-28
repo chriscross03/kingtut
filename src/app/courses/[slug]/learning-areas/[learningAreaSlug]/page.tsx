@@ -1,142 +1,86 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import Link from "next/link";
-import { useFetchResource } from "../../../../../hooks/useFetchResource";
+import { useMemo } from "react";
+import { useFetchResource } from "@/hooks/useFetchResource";
+import type { LearningArea, DifficultyLevel, Skill } from "@/generated/prisma";
+import BackLink from "@/components/BackLink";
+import PageLayout from "../../../components/PageLayout";
+import ResourceList from "../../../components/ResourceList";
+
+// Extend LearningArea to include nested DifficultyLevels and Skills
+interface LearningAreaWithSkills extends LearningArea {
+  difficultyLevels?: (DifficultyLevel & { skills?: Skill[] })[];
+}
 
 export default function LearningAreaPage() {
   const params = useParams();
   const courseSlug = params.slug as string;
   const learningAreaSlug = params.learningAreaSlug as string;
 
-  // Fetch skills for this learning area
-  const skills = useFetchResource("/api/skills", (a, b) =>
-    a.name.localeCompare(b.name)
+  // Sort function for skills or difficulty levels if needed
+  const sortFn = useMemo(
+    () => (a: LearningArea, b: LearningArea) => a.name.localeCompare(b.name),
+    []
   );
 
-  if (skills.loading) {
+  // Fetch learning area from nested API
+  const learningArea = useFetchResource<LearningAreaWithSkills>(
+    `/api/courses/${courseSlug}/learning-areas/${learningAreaSlug}`,
+    sortFn
+  );
+
+  const learningAreaData = learningArea.data[0]; // Only one learning area
+
+  // Loading state
+  if (learningArea.loading) {
     return (
-      <div
-        style={{
-          padding: "2rem",
-          fontFamily: "sans-serif",
-          maxWidth: "800px",
-          margin: "0 auto",
-        }}
-      >
-        <h1>Loading skills...</h1>
+      <div className="flex justify-center items-center py-16">
+        <p className="text-gray-500 text-lg">Loading learning area...</p>
       </div>
     );
   }
 
-  if (skills.error) {
+  // Error state
+  if (learningArea.error) {
     return (
-      <div
-        style={{
-          padding: "2rem",
-          fontFamily: "sans-serif",
-          maxWidth: "800px",
-          margin: "0 auto",
-        }}
-      >
-        <h1>Error loading skills</h1>
-        <p style={{ color: "red" }}>Error: {skills.error.message}</p>
-        <Link href={`/courses/${courseSlug}`} style={{ color: "#1a73e8" }}>
-          ← Back to course
-        </Link>
+      <div className="bg-red-100 text-red-700 p-4 rounded-md max-w-xl mx-auto mt-8">
+        <p>Error: {learningArea.error.message}</p>
       </div>
     );
   }
 
-  // Filter skills by learning area slug (we'll need to enhance this)
-  const learningAreaSkills = skills.data.filter(
-    (skill) => skill.difficultyLevel.learningArea.slug === learningAreaSlug
-  );
+  // Empty state
+  if (!learningAreaData) {
+    return (
+      <div className="text-gray-600 italic text-center py-16">
+        Learning area not found.
+      </div>
+    );
+  }
 
   return (
-    <div
-      style={{
-        padding: "2rem",
-        fontFamily: "sans-serif",
-        maxWidth: "800px",
-        margin: "0 auto",
-      }}
+    <PageLayout
+      title={learningAreaData.name}
+      subtitle={learningAreaData.description || ""}
     >
-      <Link
-        href={`/courses/${courseSlug}`}
-        style={{ color: "#1a73e8", textDecoration: "none" }}
-      >
-        ← Back to course
-      </Link>
+      <BackLink href={`/courses/${courseSlug}`} label="Back to course" />
 
-      <h1
-        style={{ fontSize: "2.5rem", marginBottom: "1rem", marginTop: "2rem" }}
-      >
-        Skills
-      </h1>
+      <h2 className="text-2xl font-semibold mt-8 mb-4">Difficulty Levels</h2>
 
-      <p style={{ fontSize: "1.1rem", color: "#555", marginBottom: "2rem" }}>
-        Practice specific skills in this learning area.
-      </p>
-
-      {learningAreaSkills.length === 0 ? (
-        <p>No skills available for this learning area yet.</p>
+      {learningAreaData.difficultyLevels?.length === 0 ? (
+        <p className="text-gray-600 italic">No difficulty levels available.</p>
       ) : (
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {learningAreaSkills.map((skill) => (
-            <li key={skill.id} style={{ marginBottom: "1rem" }}>
-              <Link
-                href={`/courses/${courseSlug}/learning-areas/${learningAreaSlug}/skills/${
-                  skill.slug || skill.id
-                }`}
-                style={{
-                  textDecoration: "none",
-                  color: "#1a73e8",
-                  fontSize: "1.1rem",
-                  fontWeight: "500",
-                  display: "block",
-                  padding: "1rem",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = "#f9fafb";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                <div>
-                  <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.2rem" }}>
-                    {skill.name}
-                  </h3>
-                  <p
-                    style={{
-                      margin: "0 0 0.5rem 0",
-                      color: "#6b7280",
-                      fontSize: "0.9rem",
-                    }}
-                  >
-                    Difficulty: {skill.difficultyLevel.name}
-                  </p>
-                  {skill.description && (
-                    <p
-                      style={{
-                        margin: 0,
-                        color: "#6b7280",
-                        fontSize: "0.9rem",
-                      }}
-                    >
-                      {skill.description}
-                    </p>
-                  )}
-                </div>
-              </Link>
-            </li>
+        <ul className="space-y-3">
+          {learningAreaData.difficultyLevels?.map((level) => (
+            <ResourceList
+              key={level.id}
+              items={level.skills || []} // list of skills
+              basePath={`/courses/${courseSlug}/learning-areas/${learningAreaSlug}`}
+            />
           ))}
         </ul>
       )}
-    </div>
+    </PageLayout>
   );
 }

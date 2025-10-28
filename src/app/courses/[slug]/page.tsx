@@ -1,7 +1,6 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import { useFetchResource } from "../../../hooks/useFetchResource";
 import type { Course, LearningArea } from "../../../generated/prisma";
 import { useMemo } from "react";
@@ -66,7 +65,7 @@ export default function CoursePage() {
 
       <ResourceList
         items={courseData.learningAreas || []}
-        basePath={`/courses/${courseData.slug}`}
+        basePath={`/courses/${courseData.slug}/learning-areas`}
       />
     </PageLayout>
   );
