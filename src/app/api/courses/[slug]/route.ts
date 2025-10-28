@@ -27,7 +27,7 @@ export async function GET(
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ course });
+    return NextResponse.json({ courses: [course] });
   } catch (error) {
     console.error("Error fetching course:", error);
     return NextResponse.json(

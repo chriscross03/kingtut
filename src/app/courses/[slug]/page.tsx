@@ -10,6 +10,7 @@ import {
   CoursePageLoading,
   CoursePageEmpty,
 } from "./components";
+import BackLink from "@/components/BackLink";
 
 interface CourseWithLearningAreas extends Course {
   learningAreas?: LearningArea[];
@@ -32,7 +33,11 @@ export default function CoursePage() {
     `/api/courses/${courseSlug}`,
     sortFn
   );
-  console.log(course);
+  console.log({
+    loading: course.loading,
+    data: course.data,
+    error: course.error,
+  });
 
   if (course.loading) {
     return <CoursePageLoading />;
@@ -41,7 +46,7 @@ export default function CoursePage() {
   if (course.error) {
     return <CoursePageError error={course.error} />;
   }
-
+  console.log(course.data);
   const courseData = course.data[0]; // Since we're fetching a specific course
 
   if (!courseData) {
@@ -57,12 +62,7 @@ export default function CoursePage() {
         margin: "0 auto",
       }}
     >
-      <Link
-        href="/courses"
-        style={{ color: "#1a73e8", textDecoration: "none" }}
-      >
-        ← Back to courses
-      </Link>
+      <BackLink href="/courses" label="back to courses page" />
 
       <h1
         style={{ fontSize: "2.5rem", marginBottom: "1rem", marginTop: "2rem" }}
