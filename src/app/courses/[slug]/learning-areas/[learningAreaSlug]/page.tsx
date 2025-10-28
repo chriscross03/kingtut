@@ -9,8 +9,12 @@ import PageLayout from "../../../components/PageLayout";
 import ResourceList from "../../../components/ResourceList";
 
 // Extend LearningArea to include nested DifficultyLevels and Skills
+interface SkillWithDifficultyLevels extends Skill {
+  difficultyLevels: DifficultyLevel[];
+}
+
 interface LearningAreaWithSkills extends LearningArea {
-  difficultyLevels?: (DifficultyLevel & { skills?: Skill[] })[];
+  skills: SkillWithDifficultyLevels[];
 }
 
 export default function LearningAreaPage() {
@@ -50,7 +54,7 @@ export default function LearningAreaPage() {
     );
   }
 
-  // Empty state
+  console.log("lasdfa;slfka");
   if (!learningAreaData) {
     return (
       <div className="text-gray-600 italic text-center py-16">
@@ -58,6 +62,7 @@ export default function LearningAreaPage() {
       </div>
     );
   }
+  console.log("sigma");
 
   return (
     <PageLayout
@@ -65,22 +70,29 @@ export default function LearningAreaPage() {
       subtitle={learningAreaData.description || ""}
     >
       <BackLink href={`/courses/${courseSlug}`} label="Back to course" />
-
-      <h2 className="text-2xl font-semibold mt-8 mb-4">Difficulty Levels</h2>
-
-      {learningAreaData.difficultyLevels?.length === 0 ? (
-        <p className="text-gray-600 italic">No difficulty levels available.</p>
-      ) : (
-        <ul className="space-y-3">
-          {learningAreaData.difficultyLevels?.map((level) => (
-            <ResourceList
-              key={level.id}
-              items={level.skills || []} // list of skills
-              basePath={`/courses/${courseSlug}/learning-areas/${learningAreaSlug}`}
-            />
-          ))}
-        </ul>
-      )}
+      <div className="mt-8 space-y-6">
+        {learningAreaData.skills && learningAreaData.skills.length > 0 ? (
+          learningAreaData.skills.map((skill) => (
+            <div
+              key={skill.id}
+              className="border rounded-lg p-4 hover:bg-gray-50 transition"
+            >
+              <h3 className="text-lg font-semibold mb-2">{skill.name}</h3>
+              <ul className="list-disc list-inside text-gray-700">
+                {skill.difficultyLevels?.length ? (
+                  skill.difficultyLevels.map((level) => (
+                    <li key={level.id}>{level.name}</li>
+                  ))
+                ) : (
+                  <li className="italic text-gray-500">No difficulty levels</li>
+                )}
+              </ul>
+            </div>
+          ))
+        ) : (
+          <p className="text-gray-600 italic">No skills found for this area.</p>
+        )}
+      </div>
     </PageLayout>
   );
 }
