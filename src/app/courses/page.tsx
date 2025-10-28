@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { useFetchResource } from "../../hooks/useFetchResource";
 import { Course } from "@/generated/prisma";
 import { CourseList, CourseLoading, CourseError } from "./components";
+import BackLink from "@/components/BackLink";
 
 export default function CoursesPage() {
   const sortFn = useMemo(
@@ -33,6 +34,8 @@ export default function CoursesPage() {
         margin: "0 auto",
       }}
     >
+      <BackLink href="/" label="back to home" />
+
       <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>Courses</h1>
       <p style={{ fontSize: "1.1rem", color: "#555", marginBottom: "2rem" }}>
         Explore lessons and resources to help you learn.
