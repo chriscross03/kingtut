@@ -8,9 +8,9 @@ export async function GET(request: NextRequest) {
     const questionSets = await prisma.questionSet.findMany({
       where: { isActive: true },
       include: {
-        skill: {
+        difficultyLevel: {
           include: {
-            difficultyLevel: {
+            skill: {
               include: {
                 learningArea: {
                   include: {

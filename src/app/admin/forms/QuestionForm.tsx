@@ -10,9 +10,12 @@ interface QuestionFormProps {
   ) => Array<{ id: number; name: string }>;
   getSkillsByLearningArea: (
     learningAreaId: number
-  ) => Array<{ id: number; name: string; difficultyLevel: { name: string } }>;
-  getQuestionSetsBySkill: (
+  ) => Array<{ id: number; name: string }>;
+  getDifficultyLevelsBySkill: (
     skillId: number
+  ) => Array<{ id: number; name: string; level: number }>;
+  getQuestionSetsByDifficultyLevel: (
+    difficultyLevelId: number
   ) => Array<{ id: number; number: number }>;
 }
 
@@ -23,7 +26,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   courses,
   getLearningAreasByCourse,
   getSkillsByLearningArea,
-  getQuestionSetsBySkill,
+  getDifficultyLevelsBySkill,
+  getQuestionSetsByDifficultyLevel,
 }) => {
   const selectedCourseId = formData.courseId
     ? parseInt(formData.courseId)
@@ -32,15 +36,23 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     ? parseInt(formData.learningAreaId)
     : null;
   const selectedSkillId = formData.skillId ? parseInt(formData.skillId) : null;
+  const selectedDifficultyLevelId = formData.difficultyLevelId
+    ? parseInt(formData.difficultyLevelId)
+    : null;
+
   const filteredLearningAreas = selectedCourseId
     ? getLearningAreasByCourse(selectedCourseId)
     : [];
   const filteredSkills = selectedLearningAreaId
     ? getSkillsByLearningArea(selectedLearningAreaId)
     : [];
-  const filteredQuestionSets = selectedSkillId
-    ? getQuestionSetsBySkill(selectedSkillId)
+  const filteredDifficultyLevels = selectedSkillId
+    ? getDifficultyLevelsBySkill(selectedSkillId)
     : [];
+  const filteredQuestionSets = selectedDifficultyLevelId
+    ? getQuestionSetsByDifficultyLevel(selectedDifficultyLevelId)
+    : [];
+
   return (
     <form onSubmit={handleSubmit} style={{ display: "grid", gap: 16 }}>
       <h3 style={{ fontSize: 18, fontWeight: 600 }}>Add New Question</h3>
@@ -53,6 +65,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
             handleInputChange("courseId", e.target.value);
             handleInputChange("learningAreaId", "");
             handleInputChange("skillId", "");
+            handleInputChange("difficultyLevelId", "");
             handleInputChange("questionSetId", "");
           }}
           style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 6 }}
@@ -74,6 +87,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           onChange={(e) => {
             handleInputChange("learningAreaId", e.target.value);
             handleInputChange("skillId", "");
+            handleInputChange("difficultyLevelId", "");
             handleInputChange("questionSetId", "");
           }}
           style={{
@@ -103,6 +117,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           value={formData.skillId || ""}
           onChange={(e) => {
             handleInputChange("skillId", e.target.value);
+            handleInputChange("difficultyLevelId", "");
             handleInputChange("questionSetId", "");
           }}
           style={{
@@ -119,18 +134,21 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           </option>
           {filteredSkills.map((skill) => (
             <option key={skill.id} value={skill.id}>
-              {skill.name} ({skill.difficultyLevel.name})
+              {skill.name}
             </option>
           ))}
         </select>
       </label>
       <label style={{ display: "grid", gap: 6 }}>
-        <span>Question Set *</span>
+        <span>Difficulty Level *</span>
         <select
           required
           disabled={!selectedSkillId}
-          value={formData.questionSetId || ""}
-          onChange={(e) => handleInputChange("questionSetId", e.target.value)}
+          value={formData.difficultyLevelId || ""}
+          onChange={(e) => {
+            handleInputChange("difficultyLevelId", e.target.value);
+            handleInputChange("questionSetId", "");
+          }}
           style={{
             padding: 8,
             border: "1px solid #d1d5db",
@@ -139,7 +157,35 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           }}
         >
           <option value="">
-            {selectedSkillId ? "Select a question set" : "Select a skill first"}
+            {selectedSkillId
+              ? "Select a difficulty level"
+              : "Select a skill first"}
+          </option>
+          {filteredDifficultyLevels.map((level) => (
+            <option key={level.id} value={level.id}>
+              {level.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label style={{ display: "grid", gap: 6 }}>
+        <span>Question Set *</span>
+        <select
+          required
+          disabled={!selectedDifficultyLevelId}
+          value={formData.questionSetId || ""}
+          onChange={(e) => handleInputChange("questionSetId", e.target.value)}
+          style={{
+            padding: 8,
+            border: "1px solid #d1d5db",
+            borderRadius: 6,
+            opacity: selectedDifficultyLevelId ? 1 : 0.6,
+          }}
+        >
+          <option value="">
+            {selectedDifficultyLevelId
+              ? "Select a question set"
+              : "Select a difficulty level first"}
           </option>
           {filteredQuestionSets.map((questionSet) => (
             <option key={questionSet.id} value={questionSet.id}>
@@ -213,6 +259,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           !formData.courseId ||
           !formData.learningAreaId ||
           !formData.skillId ||
+          !formData.difficultyLevelId ||
           !formData.questionSetId ||
           !formData.questionText ||
           !formData.options ||
@@ -224,6 +271,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
             !formData.courseId ||
             !formData.learningAreaId ||
             !formData.skillId ||
+            !formData.difficultyLevelId ||
             !formData.questionSetId ||
             !formData.questionText ||
             !formData.options ||
@@ -237,6 +285,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
             !formData.courseId ||
             !formData.learningAreaId ||
             !formData.skillId ||
+            !formData.difficultyLevelId ||
             !formData.questionSetId ||
             !formData.questionText ||
             !formData.options ||

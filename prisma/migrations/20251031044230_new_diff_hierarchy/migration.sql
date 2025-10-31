@@ -2,6 +2,7 @@
 CREATE TABLE "Course" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
     "description" TEXT,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -12,6 +13,7 @@ CREATE TABLE "Course" (
 CREATE TABLE "LearningArea" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
     "description" TEXT,
     "courseId" INTEGER NOT NULL,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
@@ -21,38 +23,40 @@ CREATE TABLE "LearningArea" (
 );
 
 -- CreateTable
-CREATE TABLE "DifficultyLevel" (
+CREATE TABLE "Skill" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "name" TEXT NOT NULL,
-    "level" INTEGER NOT NULL,
+    "slug" TEXT NOT NULL,
+    "description" TEXT,
     "learningAreaId" INTEGER NOT NULL,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "DifficultyLevel_learningAreaId_fkey" FOREIGN KEY ("learningAreaId") REFERENCES "LearningArea" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT "Skill_learningAreaId_fkey" FOREIGN KEY ("learningAreaId") REFERENCES "LearningArea" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
-CREATE TABLE "Skill" (
+CREATE TABLE "DifficultyLevel" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "name" TEXT NOT NULL,
-    "description" TEXT,
-    "difficultyLevelId" INTEGER NOT NULL,
+    "slug" TEXT,
+    "level" INTEGER NOT NULL,
+    "skillId" INTEGER NOT NULL,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Skill_difficultyLevelId_fkey" FOREIGN KEY ("difficultyLevelId") REFERENCES "DifficultyLevel" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT "DifficultyLevel_skillId_fkey" FOREIGN KEY ("skillId") REFERENCES "Skill" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
 CREATE TABLE "QuestionSet" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "number" INTEGER NOT NULL,
-    "skillId" INTEGER NOT NULL,
+    "difficultyLevelId" INTEGER NOT NULL,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "QuestionSet_skillId_fkey" FOREIGN KEY ("skillId") REFERENCES "Skill" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT "QuestionSet_difficultyLevelId_fkey" FOREIGN KEY ("difficultyLevelId") REFERENCES "DifficultyLevel" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -67,6 +71,15 @@ CREATE TABLE "Question" (
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
     CONSTRAINT "Question_questionSetId_fkey" FOREIGN KEY ("questionSetId") REFERENCES "QuestionSet" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "User" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "email" TEXT NOT NULL,
+    "name" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
 );
 
 -- CreateTable
@@ -144,6 +157,15 @@ CREATE TABLE "CourseProficiency" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Course_name_key" ON "Course"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Course_slug_key" ON "Course"("slug");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "LearningArea_slug_key" ON "LearningArea"("slug");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SkillProficiency_userId_skillId_key" ON "SkillProficiency"("userId", "skillId");
