@@ -5,30 +5,29 @@ const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
   try {
-    const questions = await prisma.question.findMany({
+    const difficultyLevels = await prisma.difficultyLevel.findMany({
       where: { isActive: true },
       include: {
-        questionSet: {
+        skill: {
           include: {
-            difficultyLevel: {
+            learningArea: {
               include: {
-                skill: {
-                  include: {
-                    learningArea: {
-                      include: { course: true },
-                    },
-                  },
-                },
+                course: true,
               },
             },
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [
+        { skill: { learningArea: { courseId: "asc" } } },
+        { skill: { learningAreaId: "asc" } },
+        { skillId: "asc" },
+        { level: "asc" },
+      ],
     });
-    return NextResponse.json({ questions });
+    return NextResponse.json({ difficultyLevels });
   } catch (error) {
-    console.error("Error fetching questions (public):", error);
+    console.error("Error fetching difficulty levels (public):", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

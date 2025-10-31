@@ -10,11 +10,21 @@ export function useResourceData() {
   const skills = useFetchResource("/api/skills", (a, b) =>
     a.name.localeCompare(b.name)
   );
+  const difficultyLevels = useFetchResource("/api/difficulty-levels", (a, b) =>
+    a.name.localeCompare(b.name)
+  );
   const questionSets = useFetchResource(
     "/api/question-sets",
     (a, b) => a.number - b.number
   );
   const questions = useFetchResource("/api/questions");
 
-  return { courses, learningAreas, skills, questionSets, questions };
+  return {
+    courses,
+    learningAreas,
+    skills,
+    difficultyLevels,
+    questionSets,
+    questions,
+  };
 }

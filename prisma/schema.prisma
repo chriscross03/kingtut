@@ -30,7 +30,7 @@ model Course {
 model LearningArea {
   id            Int             @id @default(autoincrement())
   name          String          // "Information and Ideas", "Craft and Structure"
-  slug          String         @unique
+  slug          String          @unique
   description   String?
   courseId      Int
   isActive      Boolean         @default(true)
@@ -39,24 +39,7 @@ model LearningArea {
   
   // Relations
   course        Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  difficultyLevels DifficultyLevel[]
   proficiencies LearningAreaProficiency[]
-  skills        Skill[]          @relation("LearningAreaSkills")
-
-}
-
-model DifficultyLevel {
-  id            Int             @id @default(autoincrement())
-  name          String          // "Beginner", "Intermediate", "Hard"
-  slug          String?         
-  level         Int             // 1, 2, 3 for ordering
-  learningAreaId Int
-  isActive      Boolean         @default(true)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  
-  // Relations
-  learningArea  LearningArea    @relation(fields: [learningAreaId], references: [id], onDelete: Cascade)
   skills        Skill[]
 }
 
@@ -65,22 +48,23 @@ model Skill {
   name              String          // "Radicals", "Polynomials"
   slug              String         
   description       String?
-  difficultyLevelId Int
+  learningAreaId    Int
   isActive          Boolean         @default(true)
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   
   // Relations
-  difficultyLevel   DifficultyLevel @relation(fields: [difficultyLevelId], references: [id], onDelete: Cascade)
-  questionSets      QuestionSet[]
+  learningArea      LearningArea    @relation(fields: [learningAreaId], references: [id], onDelete: Cascade)
+  difficultyLevels  DifficultyLevel[]
   proficiencies     SkillProficiency[]
-  learningArea     LearningArea   @relation("LearningAreaSkills", fields: [learningAreaId], references: [id])
-  learningAreaId   Int
 }
 
-model QuestionSet {
+model DifficultyLevel {
   id            Int             @id @default(autoincrement())
-  number        Int             // 1, 2, 3, 4, 5
+  name          String          // "Beginner", "Intermediate", "Advanced"
+  slug          String?
+  description   String?        
+  level         Int             // 1, 2, 3 for ordering
   skillId       Int
   isActive      Boolean         @default(true)
   createdAt     DateTime        @default(now())
@@ -88,8 +72,21 @@ model QuestionSet {
   
   // Relations
   skill         Skill           @relation(fields: [skillId], references: [id], onDelete: Cascade)
-  questions     Question[]
-  quizAttempts  QuizAttempt[]
+  questionSets  QuestionSet[]
+}
+
+model QuestionSet {
+  id                Int             @id @default(autoincrement())
+  number            Int             // 1, 2, 3, 4, 5
+  difficultyLevelId Int
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  
+  // Relations
+  difficultyLevel   DifficultyLevel @relation(fields: [difficultyLevelId], references: [id], onDelete: Cascade)
+  questions         Question[]
+  quizAttempts      QuizAttempt[]
 }
 
 model Question {

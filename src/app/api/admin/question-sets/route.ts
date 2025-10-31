@@ -15,16 +15,16 @@ type LearningAreaWithCourse = LearningArea & {
   course: Course;
 };
 
-type DifficultyLevelWithRelations = DifficultyLevel & {
+type SkillWithRelations = Skill & {
   learningArea: LearningAreaWithCourse;
 };
 
-type SkillWithRelations = Skill & {
-  difficultyLevel: DifficultyLevelWithRelations;
+type DifficultyLevelWithRelations = DifficultyLevel & {
+  skill: SkillWithRelations;
 };
 
 type QuestionSetWithRelations = QuestionSet & {
-  skill: SkillWithRelations;
+  difficultyLevel: DifficultyLevelWithRelations;
 };
 
 // Response types
@@ -46,7 +46,7 @@ export async function POST(
 ): Promise<NextResponse<QuestionSetResponse | ErrorResponse>> {
   try {
     const body = await request.json();
-    const { number, skillId, isActive = true } = body;
+    const { number, skillId, difficultyLevelId, isActive = true } = body;
 
     // Validate required fields
     if (!number) {
@@ -62,6 +62,12 @@ export async function POST(
         { status: 400 }
       );
     }
+    if (!difficultyLevelId) {
+      return NextResponse.json(
+        { error: "Difficulty level selection is required" },
+        { status: 400 }
+      );
+    }
 
     // Validate number is between 1-5
     const questionNumber = parseInt(number);
@@ -72,27 +78,28 @@ export async function POST(
       );
     }
 
-    const parsedSkillId = parseInt(skillId);
+    const parsedDifficultyLevelId = parseInt(difficultyLevelId);
 
-    // Verify the skill exists
-    const skill: SkillWithRelations | null = await prisma.skill.findUnique({
-      where: { id: parsedSkillId },
-      include: {
-        difficultyLevel: {
-          include: {
-            learningArea: {
-              include: {
-                course: true,
+    // Verify the difficulty level exists
+    const difficultyLevel: DifficultyLevelWithRelations | null =
+      await prisma.difficultyLevel.findUnique({
+        where: { id: parsedDifficultyLevelId },
+        include: {
+          skill: {
+            include: {
+              learningArea: {
+                include: {
+                  course: true,
+                },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    if (!skill) {
+    if (!difficultyLevel) {
       return NextResponse.json(
-        { error: "Selected skill does not exist" },
+        { error: "Selected difficulty level does not exist" },
         { status: 404 }
       );
     }
@@ -102,14 +109,14 @@ export async function POST(
       await prisma.questionSet.findFirst({
         where: {
           number: questionNumber,
-          skillId: parsedSkillId,
+          difficultyLevelId: parsedDifficultyLevelId,
         },
       });
 
     if (existingQuestionSet) {
       return NextResponse.json(
         {
-          error: `Question set ${questionNumber} already exists for this skill`,
+          error: `Question set ${questionNumber} already exists for this difficulty level`,
         },
         { status: 409 }
       );
@@ -120,13 +127,13 @@ export async function POST(
       await prisma.questionSet.create({
         data: {
           number: questionNumber,
-          skillId: parsedSkillId,
+          difficultyLevelId: parsedDifficultyLevelId,
           isActive,
         },
         include: {
-          skill: {
+          difficultyLevel: {
             include: {
-              difficultyLevel: {
+              skill: {
                 include: {
                   learningArea: {
                     include: {
@@ -139,7 +146,6 @@ export async function POST(
           },
         },
       });
-
     return NextResponse.json(
       {
         message: "Question set created successfully",
@@ -163,9 +169,9 @@ export async function GET(): Promise<
     const questionSets: QuestionSetWithRelations[] =
       await prisma.questionSet.findMany({
         include: {
-          skill: {
+          difficultyLevel: {
             include: {
-              difficultyLevel: {
+              skill: {
                 include: {
                   learningArea: {
                     include: {

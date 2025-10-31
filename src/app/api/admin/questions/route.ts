@@ -16,16 +16,16 @@ type LearningAreaWithCourse = LearningArea & {
   course: Course;
 };
 
-type DifficultyLevelWithRelations = DifficultyLevel & {
+type SkillWithRelations = Skill & {
   learningArea: LearningAreaWithCourse;
 };
 
-type SkillWithRelations = Skill & {
-  difficultyLevel: DifficultyLevelWithRelations;
+type DifficultyLevelWithRelations = DifficultyLevel & {
+  skill: SkillWithRelations;
 };
 
 type QuestionSetWithRelations = QuestionSet & {
-  skill: SkillWithRelations;
+  difficultyLevel: DifficultyLevelWithRelations;
 };
 
 type QuestionWithRelations = Question & {
@@ -96,9 +96,9 @@ export async function POST(
       await prisma.questionSet.findUnique({
         where: { id: parsedQuestionSetId },
         include: {
-          skill: {
+          difficultyLevel: {
             include: {
-              difficultyLevel: {
+              skill: {
                 include: {
                   learningArea: {
                     include: {
@@ -152,9 +152,9 @@ export async function POST(
       include: {
         questionSet: {
           include: {
-            skill: {
+            difficultyLevel: {
               include: {
-                difficultyLevel: {
+                skill: {
                   include: {
                     learningArea: {
                       include: {
@@ -194,9 +194,9 @@ export async function GET(): Promise<
       include: {
         questionSet: {
           include: {
-            skill: {
+            difficultyLevel: {
               include: {
-                difficultyLevel: {
+                skill: {
                   include: {
                     learningArea: {
                       include: {
