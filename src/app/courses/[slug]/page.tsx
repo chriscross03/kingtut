@@ -16,14 +16,8 @@ export default function CoursePage() {
   const params = useParams();
   const courseSlug = params.slug as string;
 
-  const sortFn = useMemo(
-    () => (a: Course, b: Course) => a.name.localeCompare(b.name),
-    []
-  );
-
   const course = useFetchResource<CourseWithLearningAreas>(
-    `/api/courses/${courseSlug}`,
-    sortFn
+    `/api/courses/${courseSlug}`
   );
 
   // Grab the first item (since it's a single course endpoint)
