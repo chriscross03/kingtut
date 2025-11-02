@@ -58,10 +58,9 @@ export default function SkillPage() {
       </div>
     );
   }
-  console.log(skillData);
   return (
     <PageLayout title={skillData.name} subtitle={skillData.description || ""}>
-      <BackLink href="s/courses" label="Back to courses" />
+      <BackLink href="/courses" label="Back to courses" />
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">Skills</h2>
 
