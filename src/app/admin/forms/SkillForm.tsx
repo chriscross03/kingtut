@@ -73,20 +73,6 @@ const SkillForm: React.FC<SkillFormProps> = ({
         </select>
       </label>
       <label style={{ display: "grid", gap: 6 }}>
-        <span>Difficulty *</span>
-        <select
-          required
-          value={formData.difficulty || ""}
-          onChange={(e) => handleInputChange("difficulty", e.target.value)}
-          style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 6 }}
-        >
-          <option value="">Select difficulty</option>
-          <option value="Beginner">Beginner</option>
-          <option value="Intermediate">Intermediate</option>
-          <option value="Hard">Hard</option>
-        </select>
-      </label>
-      <label style={{ display: "grid", gap: 6 }}>
         <span>Skill Name *</span>
         <input
           type="text"
@@ -115,28 +101,19 @@ const SkillForm: React.FC<SkillFormProps> = ({
       <button
         type="submit"
         disabled={
-          !formData.courseId ||
-          !formData.learningAreaId ||
-          !formData.difficulty ||
-          !formData.name
+          !formData.courseId || !formData.learningAreaId || !formData.name
         }
         style={{
           padding: "10px 16px",
           background:
-            !formData.courseId ||
-            !formData.learningAreaId ||
-            !formData.difficulty ||
-            !formData.name
+            !formData.courseId || !formData.learningAreaId || !formData.name
               ? "#cbd5e1"
               : "#111827",
           color: "white",
           border: "none",
           borderRadius: 6,
           cursor:
-            !formData.courseId ||
-            !formData.learningAreaId ||
-            !formData.difficulty ||
-            !formData.name
+            !formData.courseId || !formData.learningAreaId || !formData.name
               ? "not-allowed"
               : "pointer",
         }}

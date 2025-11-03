@@ -1,51 +1,66 @@
 import React from "react";
 
-interface QuestionSetFormProps {
+interface Course {
+  id: number;
+  name: string;
+}
+
+interface LearningArea {
+  id: number;
+  name: string;
+  courseId: number;
+}
+
+interface Skill {
+  id: number;
+  name: string;
+  learningAreaId: number;
+}
+
+interface DifficultyLevelFormProps {
   formData: Record<string, any>;
   handleInputChange: (field: string, value: any) => void;
   handleSubmit: (e: React.FormEvent) => void;
-  courses: Array<{ id: number; name: string }>;
-  getLearningAreasByCourse: (
-    courseId: number
-  ) => Array<{ id: number; name: string }>;
-  getSkillsByLearningArea: (
-    learningAreaId: number
-  ) => Array<{ id: number; name: string }>;
-  getDifficultyLevelsBySkill: (
-    skillId: number
-  ) => Array<{ id: number; name: string; level: number }>;
+  courses: Course[];
+  getLearningAreasByCourse: (courseId: number) => LearningArea[];
+  getSkillsByLearningArea: (learningAreaId: number) => Skill[];
 }
 
-const QuestionSetForm: React.FC<QuestionSetFormProps> = ({
+export default function DifficultyLevelForm({
   formData,
   handleInputChange,
   handleSubmit,
   courses,
   getLearningAreasByCourse,
   getSkillsByLearningArea,
-  getDifficultyLevelsBySkill,
-}) => {
+}: DifficultyLevelFormProps) {
   const selectedCourseId = formData.courseId
     ? parseInt(formData.courseId)
     : null;
   const selectedLearningAreaId = formData.learningAreaId
     ? parseInt(formData.learningAreaId)
     : null;
-  const selectedSkillId = formData.skillId ? parseInt(formData.skillId) : null;
 
-  const filteredLearningAreas = selectedCourseId
+  const learningAreas = selectedCourseId
     ? getLearningAreasByCourse(selectedCourseId)
     : [];
-  const filteredSkills = selectedLearningAreaId
+  const skills = selectedLearningAreaId
     ? getSkillsByLearningArea(selectedLearningAreaId)
     : [];
-  const filteredDifficultyLevels = selectedSkillId
-    ? getDifficultyLevelsBySkill(selectedSkillId)
-    : [];
+
+  const orderNames: Record<number, string> = {
+    1: "Beginner",
+    2: "Intermediate",
+    3: "Advanced",
+  };
 
   return (
     <form onSubmit={handleSubmit} style={{ display: "grid", gap: 16 }}>
-      <h3 style={{ fontSize: 18, fontWeight: 600 }}>Add New Question Set</h3>
+      <h3 style={{ fontSize: 18, fontWeight: 600 }}>
+        Add New Difficulty Level
+      </h3>
+
+      {/* Course Selection */}
       <label style={{ display: "grid", gap: 6 }}>
         <span>Course *</span>
         <select
@@ -55,7 +70,6 @@ const QuestionSetForm: React.FC<QuestionSetFormProps> = ({
             handleInputChange("courseId", e.target.value);
             handleInputChange("learningAreaId", "");
             handleInputChange("skillId", "");
-            handleInputChange("difficultyLevelId", "");
           }}
           style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 6 }}
         >
@@ -67,6 +81,8 @@ const QuestionSetForm: React.FC<QuestionSetFormProps> = ({
           ))}
         </select>
       </label>
+
+      {/* Learning Area Selection */}
       <label style={{ display: "grid", gap: 6 }}>
         <span>Learning Area *</span>
         <select
@@ -76,7 +92,6 @@ const QuestionSetForm: React.FC<QuestionSetFormProps> = ({
           onChange={(e) => {
             handleInputChange("learningAreaId", e.target.value);
             handleInputChange("skillId", "");
-            handleInputChange("difficultyLevelId", "");
           }}
           style={{
             padding: 8,
@@ -90,23 +105,22 @@ const QuestionSetForm: React.FC<QuestionSetFormProps> = ({
               ? "Select a learning area"
               : "Select a course first"}
           </option>
-          {filteredLearningAreas.map((learningArea) => (
-            <option key={learningArea.id} value={learningArea.id}>
-              {learningArea.name}
+          {learningAreas.map((la) => (
+            <option key={la.id} value={la.id}>
+              {la.name}
             </option>
           ))}
         </select>
       </label>
+
+      {/* Skill Selection */}
       <label style={{ display: "grid", gap: 6 }}>
         <span>Skill *</span>
         <select
           required
           disabled={!selectedLearningAreaId}
           value={formData.skillId || ""}
-          onChange={(e) => {
-            handleInputChange("skillId", e.target.value);
-            handleInputChange("difficultyLevelId", "");
-          }}
+          onChange={(e) => handleInputChange("skillId", e.target.value)}
           style={{
             padding: 8,
             border: "1px solid #d1d5db",
@@ -119,65 +133,97 @@ const QuestionSetForm: React.FC<QuestionSetFormProps> = ({
               ? "Select a skill"
               : "Select a learning area first"}
           </option>
-          {filteredSkills.map((skill) => (
+          {skills.map((skill) => (
             <option key={skill.id} value={skill.id}>
               {skill.name}
             </option>
           ))}
         </select>
       </label>
+
+      {/* Order Selection */}
       <label style={{ display: "grid", gap: 6 }}>
-        <span>Difficulty Level *</span>
+        <span>Order *</span>
         <select
           required
-          disabled={!selectedSkillId}
-          value={formData.difficultyLevelId || ""}
-          onChange={(e) =>
-            handleInputChange("difficultyLevelId", e.target.value)
-          }
+          value={formData.order || ""}
+          onChange={(e) => {
+            const orderValue = parseInt(e.target.value);
+
+            // always keep order and level in sync
+            handleInputChange("order", orderValue);
+            handleInputChange("level", orderValue);
+
+            // map order → difficulty name
+            const orderNames: Record<number, string> = {
+              1: "Beginner",
+              2: "Intermediate",
+              3: "Advanced",
+            };
+
+            if (orderNames[orderValue]) {
+              handleInputChange("name", orderNames[orderValue]);
+            } else {
+              handleInputChange("name", "");
+            }
+          }}
+          style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 6 }}
+        >
+          <option value="">Select difficulty order</option>
+          <option value="1">1 – Beginner</option>
+          <option value="2">2 – Intermediate</option>
+          <option value="3">3 – Advanced</option>
+        </select>
+
+        <span style={{ fontSize: 12, color: "#6b7280" }}>
+          The order determines the difficulty level number and name
+          automatically.
+        </span>
+      </label>
+
+      {/* Auto-filled Difficulty Name */}
+      <label style={{ display: "grid", gap: 6 }}>
+        <span>Difficulty Name</span>
+        <input
+          type="text"
+          value={formData.name || ""}
+          readOnly
+          placeholder="Will auto-fill based on order selection"
           style={{
             padding: 8,
             border: "1px solid #d1d5db",
             borderRadius: 6,
-            opacity: selectedSkillId ? 1 : 0.6,
+            backgroundColor: "#f9fafb",
+            color: "#6b7280",
           }}
-        >
-          <option value="">
-            {selectedSkillId
-              ? "Select a difficulty level"
-              : "Select a skill first"}
-          </option>
-          {filteredDifficultyLevels.map((level) => (
-            <option key={level.id} value={level.id}>
-              {level.name}
-            </option>
-          ))}
-        </select>
+        />
       </label>
+
+      {/* Description */}
       <label style={{ display: "grid", gap: 6 }}>
-        <span>Question Set Number (1-5) *</span>
-        <select
-          required
-          value={formData.number || ""}
-          onChange={(e) => handleInputChange("number", Number(e.target.value))}
-          style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 6 }}
-        >
-          <option value="">Select set number</option>
-          <option value="1">Set 1</option>
-          <option value="2">Set 2</option>
-          <option value="3">Set 3</option>
-          <option value="4">Set 4</option>
-          <option value="5">Set 5</option>
-        </select>
+        <span>Description (Optional)</span>
+        <textarea
+          rows={3}
+          placeholder="e.g., Basic factoring with simple expressions"
+          value={formData.description || ""}
+          onChange={(e) => handleInputChange("description", e.target.value)}
+          style={{
+            padding: 8,
+            border: "1px solid #d1d5db",
+            borderRadius: 6,
+            resize: "vertical",
+          }}
+        />
       </label>
+
+      {/* Submit Button */}
       <button
         type="submit"
         disabled={
           !formData.courseId ||
           !formData.learningAreaId ||
           !formData.skillId ||
-          !formData.difficultyLevelId ||
-          !formData.number
+          !formData.order
         }
         style={{
           padding: "10px 16px",
@@ -185,8 +231,7 @@ const QuestionSetForm: React.FC<QuestionSetFormProps> = ({
             !formData.courseId ||
             !formData.learningAreaId ||
             !formData.skillId ||
-            !formData.difficultyLevelId ||
-            !formData.number
+            !formData.order
               ? "#cbd5e1"
               : "#111827",
           color: "white",
@@ -196,16 +241,13 @@ const QuestionSetForm: React.FC<QuestionSetFormProps> = ({
             !formData.courseId ||
             !formData.learningAreaId ||
             !formData.skillId ||
-            !formData.difficultyLevelId ||
-            !formData.number
+            !formData.order
               ? "not-allowed"
               : "pointer",
         }}
       >
-        Create Question Set
+        Create Difficulty Level
       </button>
     </form>
   );
-};
-
-export default QuestionSetForm;
+}

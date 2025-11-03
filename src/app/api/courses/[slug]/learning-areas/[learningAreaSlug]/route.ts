@@ -19,13 +19,13 @@ export async function GET(
         course: { slug }, // ensures the learning area belongs to this course
       },
       include: {
-        difficultyLevels: {
+        skills: {
           where: { isActive: true },
-          orderBy: { level: "asc" },
+          orderBy: { name: "asc" },
           include: {
-            skills: {
+            difficultyLevels: {
               where: { isActive: true },
-              orderBy: { name: "asc" },
+              orderBy: { level: "asc" },
             },
           },
         },

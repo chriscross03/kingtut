@@ -15,12 +15,9 @@ type LearningAreaWithCourse = LearningArea & {
   course: Course;
 };
 
-type DifficultyLevelWithRelations = DifficultyLevel & {
-  learningArea: LearningAreaWithCourse;
-};
-
 type SkillWithRelations = Skill & {
-  difficultyLevel: DifficultyLevelWithRelations;
+  learningArea: LearningAreaWithCourse;
+  difficultyLevels?: DifficultyLevel[];
 };
 
 // Response types
@@ -42,13 +39,7 @@ export async function POST(
 ): Promise<NextResponse<SkillResponse | ErrorResponse>> {
   try {
     const body = await request.json();
-    const {
-      name,
-      description,
-      learningAreaId,
-      difficulty,
-      isActive = true,
-    } = body;
+    const { name, description, learningAreaId, isActive = true } = body;
 
     // Validate required fields
     if (!name) {
@@ -61,13 +52,6 @@ export async function POST(
     if (!learningAreaId) {
       return NextResponse.json(
         { error: "Learning area selection is required" },
-        { status: 400 }
-      );
-    }
-
-    if (!difficulty) {
-      return NextResponse.json(
-        { error: "Difficulty selection is required" },
         { status: 400 }
       );
     }
@@ -93,9 +77,7 @@ export async function POST(
     const existingSkill: Skill | null = await prisma.skill.findFirst({
       where: {
         name,
-        difficultyLevel: {
-          learningAreaId: parseInt(learningAreaId),
-        },
+        learningAreaId: parseInt(learningAreaId),
       },
     });
 
@@ -108,48 +90,22 @@ export async function POST(
       );
     }
 
-    // Find or create the difficulty level
-    let difficultyLevel: DifficultyLevel | null =
-      await prisma.difficultyLevel.findFirst({
-        where: {
-          name: difficulty,
-          learningAreaId: parseInt(learningAreaId),
-        },
-      });
-
-    if (!difficultyLevel) {
-      // Create the difficulty level if it doesn't exist
-      const levelNumber =
-        difficulty === "Beginner" ? 1 : difficulty === "Intermediate" ? 2 : 3;
-
-      difficultyLevel = await prisma.difficultyLevel.create({
-        data: {
-          name: difficulty,
-          level: levelNumber,
-          learningAreaId: parseInt(learningAreaId),
-        },
-      });
-    }
-
     // Create the skill
     const skill: SkillWithRelations = await prisma.skill.create({
       data: {
         name,
         slug,
         description: description || null,
-        difficultyLevelId: difficultyLevel.id,
+        learningAreaId: parseInt(learningAreaId),
         isActive,
       },
       include: {
-        difficultyLevel: {
+        learningArea: {
           include: {
-            learningArea: {
-              include: {
-                course: true,
-              },
-            },
+            course: true,
           },
         },
+        difficultyLevels: true,
       },
     });
 
@@ -175,14 +131,14 @@ export async function GET(): Promise<
   try {
     const skills: SkillWithRelations[] = await prisma.skill.findMany({
       include: {
-        difficultyLevel: {
+        learningArea: {
           include: {
-            learningArea: {
-              include: {
-                course: true,
-              },
-            },
+            course: true,
           },
+        },
+        difficultyLevels: {
+          where: { isActive: true },
+          orderBy: { level: "asc" },
         },
       },
       orderBy: { createdAt: "desc" },

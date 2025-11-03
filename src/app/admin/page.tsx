@@ -4,6 +4,7 @@ import { useState } from "react";
 import CourseForm from "./forms/CourseForm";
 import LearningAreaForm from "./forms/LearningAreaForm";
 import SkillForm from "./forms/SkillForm";
+import DifficultyLevelForm from "./forms/DifficultyForm";
 import QuestionSetForm from "./forms/QuestionSetForm";
 import QuestionForm from "./forms/QuestionForm";
 import { useResourceData } from "../../hooks/useResourceData";
@@ -14,6 +15,7 @@ type ContentType =
   | "course"
   | "learningArea"
   | "skill"
+  | "difficultyLevel"
   | "questionSet"
   | "question";
 
@@ -22,8 +24,14 @@ export default function AdminPage() {
   const [formData, setFormData, handleInputChange] = useFormData<
     Record<string, any>
   >({});
-  const { courses, learningAreas, skills, questionSets, questions } =
-    useResourceData();
+  const {
+    courses,
+    learningAreas,
+    skills,
+    difficultyLevels,
+    questionSets,
+    questions,
+  } = useResourceData();
 
   // Helper function to get learning areas for a specific course
   const getLearningAreasByCourse = (courseId: number) => {
@@ -33,13 +41,20 @@ export default function AdminPage() {
   // Helper function to get skills for a specific learning area
   const getSkillsByLearningArea = (learningAreaId: number) => {
     return skills.data.filter(
-      (skill) => skill.difficultyLevel.learningAreaId === learningAreaId
+      (skill) => skill.learningAreaId === learningAreaId
     );
   };
 
-  // Helper function to get question sets for a specific skill
-  const getQuestionSetsBySkill = (skillId: number) => {
-    return questionSets.data.filter((qs) => qs.skillId === skillId);
+  // Helper function to get difficulty levels for a specific skill
+  const getDifficultyLevelsBySkill = (skillId: number) => {
+    return difficultyLevels.data.filter((dl) => dl.skillId === skillId);
+  };
+
+  // Helper function to get question sets for a specific difficulty level
+  const getQuestionSetsByDifficultyLevel = (difficultyLevelId: number) => {
+    return questionSets.data.filter(
+      (qs) => qs.difficultyLevelId === difficultyLevelId
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,6 +91,14 @@ export default function AdminPage() {
         });
       } else if (activeTab === "skill") {
         response = await fetch("/api/admin/skills", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+      } else if (activeTab === "difficultyLevel") {
+        response = await fetch("/api/admin/difficulty-levels", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -119,6 +142,11 @@ export default function AdminPage() {
         } else if (activeTab === "skill") {
           alert(`Skill created successfully! ID: ${result.skill.id}`);
           await skills.refresh();
+        } else if (activeTab === "difficultyLevel") {
+          alert(
+            `Difficulty level created successfully! ID: ${result.difficultyLevel.id}`
+          );
+          await difficultyLevels.refresh();
         } else if (activeTab === "questionSet") {
           alert(
             `Question set created successfully! ID: ${result.questionSet.id}`
@@ -148,6 +176,8 @@ export default function AdminPage() {
       else if (activeTab === "learningArea")
         endpoint = "/api/admin/learning-areas";
       else if (activeTab === "skill") endpoint = "/api/admin/skills";
+      else if (activeTab === "difficultyLevel")
+        endpoint = "/api/admin/difficulty-levels";
       else if (activeTab === "questionSet")
         endpoint = "/api/admin/question-sets";
       else if (activeTab === "question") endpoint = "/api/admin/questions";
@@ -163,6 +193,8 @@ export default function AdminPage() {
         if (activeTab === "course") await courses.refresh();
         else if (activeTab === "learningArea") await learningAreas.refresh();
         else if (activeTab === "skill") await skills.refresh();
+        else if (activeTab === "difficultyLevel")
+          await difficultyLevels.refresh();
         else if (activeTab === "questionSet") await questionSets.refresh();
         else if (activeTab === "question") await questions.refresh();
       } else {
@@ -179,6 +211,7 @@ export default function AdminPage() {
     { id: "course", label: "Course", icon: "📚" },
     { id: "learningArea", label: "Learning Area", icon: "🎯" },
     { id: "skill", label: "Skill", icon: "🔧" },
+    { id: "difficultyLevel", label: "Difficulty Level", icon: "📊" },
     { id: "questionSet", label: "Question Set", icon: "📝" },
     { id: "question", label: "Question", icon: "❓" },
   ] as const;
@@ -212,6 +245,17 @@ export default function AdminPage() {
             getLearningAreasByCourse={getLearningAreasByCourse}
           />
         );
+      case "difficultyLevel":
+        return (
+          <DifficultyLevelForm
+            formData={formData}
+            handleInputChange={handleInputChange}
+            handleSubmit={handleSubmit}
+            courses={courses.data}
+            getLearningAreasByCourse={getLearningAreasByCourse}
+            getSkillsByLearningArea={getSkillsByLearningArea}
+          />
+        );
       case "questionSet":
         return (
           <QuestionSetForm
@@ -221,6 +265,7 @@ export default function AdminPage() {
             courses={courses.data}
             getLearningAreasByCourse={getLearningAreasByCourse}
             getSkillsByLearningArea={getSkillsByLearningArea}
+            getDifficultyLevelsBySkill={getDifficultyLevelsBySkill}
           />
         );
       case "question":
@@ -232,18 +277,21 @@ export default function AdminPage() {
             courses={courses.data}
             getLearningAreasByCourse={getLearningAreasByCourse}
             getSkillsByLearningArea={getSkillsByLearningArea}
-            getQuestionSetsBySkill={getQuestionSetsBySkill}
+            getDifficultyLevelsBySkill={getDifficultyLevelsBySkill}
+            getQuestionSetsByDifficultyLevel={getQuestionSetsByDifficultyLevel}
           />
         );
       default:
         return null;
     }
   };
+
   const renderItemsList = () => {
     let items: any[] = [];
     if (activeTab === "course") items = courses.data;
     else if (activeTab === "learningArea") items = learningAreas.data;
     else if (activeTab === "skill") items = skills.data;
+    else if (activeTab === "difficultyLevel") items = difficultyLevels.data;
     else if (activeTab === "questionSet") items = questionSets.data;
     else if (activeTab === "question") items = questions.data;
 
