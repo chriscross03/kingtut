@@ -13,10 +13,13 @@ interface ErrorResponse {
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: any
 ): Promise<NextResponse<SuccessResponse | ErrorResponse>> {
   try {
-    const { id } = params;
+    const params = context?.params;
+    const resolvedParams =
+      typeof params?.then === "function" ? await params : params;
+    const id = resolvedParams?.id;
     if (!id) {
       return NextResponse.json({ error: "Course ID missing" }, { status: 400 });
     }

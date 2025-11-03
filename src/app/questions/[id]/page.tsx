@@ -16,9 +16,9 @@ export default async function QuestionPage({ params }: Props) {
     include: {
       questionSet: {
         include: {
-          skill: {
+          difficultyLevel: {
             include: {
-              difficultyLevel: {
+              skill: {
                 include: { learningArea: { include: { course: true } } },
               },
             },
@@ -58,13 +58,13 @@ export default async function QuestionPage({ params }: Props) {
       <section>
         <h4>Context</h4>
         <p>
-          Course: {question.questionSet?.skill?.difficultyLevel?.learningArea?.course?.name}
+          Course: {question.questionSet?.difficultyLevel?.skill?.learningArea?.course?.name}
         </p>
         <p>
-          Learning Area: {question.questionSet?.skill?.difficultyLevel?.learningArea?.name}
+          Learning Area: {question.questionSet?.difficultyLevel?.skill?.learningArea?.name}
         </p>
         <p>
-          Skill: {question.questionSet?.skill?.difficultyLevel?.name} — {question.questionSet?.skill?.name}
+          Skill: {question.questionSet?.difficultyLevel?.name} — {question.questionSet?.difficultyLevel?.skill?.name}
         </p>
       </section>
     </main>
