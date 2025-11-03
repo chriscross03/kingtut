@@ -20,38 +20,44 @@ export async function GET(
     const { slug, learningAreaSlug, skillSlug, difficultyLevelSlug } =
       await params;
 
-    // Fetch the specific difficulty level
+    const skill = await prisma.skill.findFirst({
+      where: {
+        slug: skillSlug,
+        isActive: true,
+        learningArea: {
+          slug: learningAreaSlug,
+          isActive: true,
+          course: {
+            slug,
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    if (!skill) {
+      return NextResponse.json({ error: "Skill not found" }, { status: 404 });
+    }
+
+    // Then fetch the specific difficulty level for this skill
     const difficultyLevel = await prisma.difficultyLevel.findFirst({
       where: {
         slug: difficultyLevelSlug,
+        skillId: skill.id, // Use the skill ID directly
         isActive: true,
-        skill: {
-          slug: skillSlug,
-          isActive: true,
-          learningArea: {
-            slug: learningAreaSlug,
-            isActive: true,
-            course: {
-              slug,
-              isActive: true,
-            },
-          },
-        },
       },
       include: {
         questionSets: {
           where: { isActive: true },
-          orderBy: { createdAt: "asc" }, // keep consistent with prior ordering
+          orderBy: { createdAt: "asc" },
         },
-        skill: true, // include skill info if needed
+        skill: true,
       },
     });
 
-    console.log(difficultyLevel?.questionSets);
-
     if (!difficultyLevel) {
       return NextResponse.json(
-        { error: "Difficulty level not found" },
+        { error: "Difficulty level not found for this skill" },
         { status: 404 }
       );
     }
