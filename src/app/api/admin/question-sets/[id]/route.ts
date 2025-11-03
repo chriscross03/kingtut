@@ -20,10 +20,6 @@ export async function DELETE(
     const resolvedParams =
       typeof params?.then === "function" ? await params : params;
     const id = resolvedParams?.id;
-  { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse<SuccessResponse | ErrorResponse>> {
-  try {
-    const { id } = await params;
     if (!id) {
       return NextResponse.json({ error: "ID missing" }, { status: 400 });
     }
