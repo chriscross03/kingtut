@@ -9,6 +9,7 @@ import QuestionSetForm from "./forms/QuestionSetForm";
 import QuestionForm from "./forms/QuestionForm";
 import { useResourceData } from "../../hooks/useResourceData";
 import { useFormData } from "../../hooks/useFormData";
+import BackLink from "@/components/BackLink";
 
 type ContentType =
   | "course"
@@ -319,6 +320,7 @@ export default function AdminPage() {
   return (
     <div className="max-w-3xl mx-auto p-4 text-gray-800 dark:text-gray-100">
       <h1 className="text-2xl font-bold mb-6">Content Management</h1>
+      <BackLink href="/" label="Go back home" />
 
       <div className="flex gap-1 mb-8 border-b border-gray-200 dark:border-gray-700">
         {tabs.map((tab) => (

@@ -13,6 +13,13 @@ interface ErrorResponse {
 
 export async function DELETE(
   request: NextRequest,
+  context: any
+): Promise<NextResponse<SuccessResponse | ErrorResponse>> {
+  try {
+    const params = context?.params;
+    const resolvedParams =
+      typeof params?.then === "function" ? await params : params;
+    const id = resolvedParams?.id;
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<SuccessResponse | ErrorResponse>> {
   try {
