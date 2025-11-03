@@ -51,7 +51,6 @@ export function useFetchResource<T = any>(
       setLoading(true);
       setError(null);
       try {
-        console.log(url);
         const response = await fetch(url);
         if (response.ok) {
           const result = await response.json();
@@ -72,7 +71,6 @@ export function useFetchResource<T = any>(
             });
           }
         } else {
-          console.log(response);
           throw new Error(`Request failed: ${response.status}`);
         }
       } catch (e: any) {

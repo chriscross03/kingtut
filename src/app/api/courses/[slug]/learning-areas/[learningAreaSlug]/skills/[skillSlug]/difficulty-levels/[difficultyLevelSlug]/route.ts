@@ -34,7 +34,6 @@ export async function GET(
         },
       },
     });
-    console.log(skill);
 
     if (!skill) {
       return NextResponse.json({ error: "Skill not found" }, { status: 404 });
@@ -55,8 +54,6 @@ export async function GET(
         skill: true,
       },
     });
-
-    console.log(difficultyLevel);
 
     if (!difficultyLevel) {
       return NextResponse.json(

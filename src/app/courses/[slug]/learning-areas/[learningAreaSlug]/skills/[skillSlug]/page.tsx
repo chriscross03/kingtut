@@ -29,7 +29,6 @@ export default function SkillPage() {
   const skill = useFetchResource<SkillWithDifficultyLevels>(
     `/api/courses/${courseSlug}/learning-areas/${learningAreaSlug}/skills/${skillSlug}`
   );
-
   const skillData = skill.data[0]; // Only one learning area
 
   // Loading state

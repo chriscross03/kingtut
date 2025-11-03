@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@/generated/prisma";
 
 const prisma = new PrismaClient();
+console.log("Runtime:", process.env.NEXT_RUNTIME);
 
 export async function GET(
   request: NextRequest,
@@ -36,9 +37,13 @@ export async function GET(
         difficultyLevels: {
           where: { isActive: true },
           orderBy: { level: "asc" },
+          include: {
+            questionSets: true,
+          },
         },
       },
     });
+    console.error("Skill:", skill);
 
     console.log(skill?.difficultyLevels);
 

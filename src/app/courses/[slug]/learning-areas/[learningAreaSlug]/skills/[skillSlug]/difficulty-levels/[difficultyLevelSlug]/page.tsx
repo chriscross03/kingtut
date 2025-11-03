@@ -29,9 +29,8 @@ export default function DifficultylevelPage() {
 
   // Fetch learning area from nested API
   const difficultyLevel = useFetchResource<DifficultyLevelWithQuestionSets>(
-    `/api/courses/${courseSlug}/learning-areas/${learningAreaSlug}/skills/${skillSlug}/diffculty-levels/${difficultyLevelSlug}`
+    `/api/courses/${courseSlug}/learning-areas/${learningAreaSlug}/skills/${skillSlug}/difficulty-levels/${difficultyLevelSlug}`
   );
-  console.log(difficultyLevel);
 
   const diffData = difficultyLevel.data[0]; // Only one learning area
 
