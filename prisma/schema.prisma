@@ -77,7 +77,13 @@ model DifficultyLevel {
 
 model QuestionSet {
   id                Int             @id @default(autoincrement())
-  number            Int             // 1, 2, 3, 4, 5
+  title             String          
+  slug              String          
+  description       String?         
+  number            Int             
+  totalQuestions    Int             @default(0)
+  totalPoints       Int             @default(0)
+  estimatedMinutes  Int             @default(15)
   difficultyLevelId Int
   isActive          Boolean         @default(true)
   createdAt         DateTime        @default(now())
@@ -89,12 +95,18 @@ model QuestionSet {
   quizAttempts      QuizAttempt[]
 }
 
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+}
+
 model Question {
   id            Int             @id @default(autoincrement())
   questionText  String
-  options       Json            // ["A", "B", "C", "D"] or multiple choice options
-  correctAnswer String
-  explanation   String?
+  questionType  QuestionType    @default(MULTIPLE_CHOICE)
+  points        Int             @default(1) // Points for this question
+  explanation   String?         // Explanation shown after answering
   questionSetId Int
   isActive      Boolean         @default(true)
   createdAt     DateTime        @default(now())
@@ -102,7 +114,20 @@ model Question {
   
   // Relations
   questionSet   QuestionSet     @relation(fields: [questionSetId], references: [id], onDelete: Cascade)
+  options       QuestionOption[]
   answers       QuestionAnswer[]
+}
+
+model QuestionOption {
+  id            Int             @id @default(autoincrement())
+  questionId    Int
+  optionText    String          // The actual option text
+  isCorrect     Boolean         @default(false)
+  orderIndex    Int             // For ordering options (0, 1, 2, 3)
+  createdAt     DateTime        @default(now())
+  
+  // Relations
+  question      Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 // ===== USER PROGRESS TRACKING =====
@@ -168,6 +193,9 @@ model QuizAttempt {
   userId        Int
   questionSetId Int
   score         Float?          // Percentage score (0-100)
+  totalPoints   Int             // Maximum possible points
+  percentage    Float           // Calculated percentage (0-100)
+  passed        Boolean         @default(false) // Whether they passed (e.g., >= 70%)
   startedAt     DateTime        @default(now())
   completedAt   DateTime?
   timeSpent     Int?            // Time in seconds
@@ -186,8 +214,9 @@ model QuestionAnswer {
   userId        Int
   quizAttemptId Int
   questionId    Int
-  userAnswer    String          // User's selected answer
+  userAnswer    String          // User's selected answer (option ID or text)
   isCorrect     Boolean
+  pointsEarned  Int             // Points earned for this question
   timeSpent     Int?            // Time in seconds for this question
   createdAt     DateTime        @default(now())
   
@@ -210,10 +239,10 @@ model SkillProficiency {
   id                Int             @id @default(autoincrement())
   userId            Int
   skillId           Int
-  level             ProficiencyLevel
-  score             Float           // Average score across all attempts
-  questionsAnswered Int             // Total questions answered
-  questionSetsCompleted Int         // Number of question sets completed (1-5)
+  level             ProficiencyLevel @default(BEGINNING)
+  score             Float           // Average score across all attempts (0-100)
+  questionsAnswered Int             @default(0) // Total questions answered
+  questionSetsCompleted Int         @default(0) // Number of question sets completed (1-5)
   lastUpdated       DateTime        @default(now())
   
   // Relations
@@ -227,10 +256,10 @@ model LearningAreaProficiency {
   id                Int             @id @default(autoincrement())
   userId            Int
   learningAreaId    Int
-  level             ProficiencyLevel
-  score             Float           // Average score from all skills
-  skillsCompleted   Int             // Number of skills with proficiency
-  totalSkills       Int             // Total skills in learning area
+  level             ProficiencyLevel @default(BEGINNING)
+  score             Float           // Average score from all skills (0-100)
+  skillsCompleted   Int             @default(0) // Number of skills with proficiency
+  totalSkills       Int             @default(0) // Total skills in learning area
   lastUpdated       DateTime        @default(now())
   
   // Relations
@@ -244,10 +273,10 @@ model CourseProficiency {
   id                    Int             @id @default(autoincrement())
   userId                Int
   courseId              Int
-  level                 ProficiencyLevel
-  score                 Float           // Average score from all learning areas
-  learningAreasCompleted Int            // Number of learning areas with proficiency
-  totalLearningAreas   Int             // Total learning areas in course
+  level                 ProficiencyLevel @default(BEGINNING)
+  score                 Float           // Average score from all learning areas (0-100)
+  learningAreasCompleted Int            @default(0) // Number of learning areas with proficiency
+  totalLearningAreas   Int             @default(0) // Total learning areas in course
   lastUpdated           DateTime        @default(now())
   
   // Relations
