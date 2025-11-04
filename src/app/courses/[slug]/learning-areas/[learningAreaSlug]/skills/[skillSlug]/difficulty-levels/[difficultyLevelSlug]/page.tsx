@@ -73,7 +73,7 @@ export default function DifficultylevelPage() {
           ...qs,
           name: `Question Set ${qs.number}`, // create a readable name
         }))}
-        basePath={`${pathname}/difficulty-levels/`}
+        basePath={`${pathname}/question-sets/`}
       />
     </PageLayout>
   );

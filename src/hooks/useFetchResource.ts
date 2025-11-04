@@ -52,6 +52,8 @@ export function useFetchResource<T = any>(
       setError(null);
       try {
         const response = await fetch(url);
+        console.log("response", response);
+        console.log(url);
         if (response.ok) {
           const result = await response.json();
           const arrKey = Object.keys(result).find((k) =>

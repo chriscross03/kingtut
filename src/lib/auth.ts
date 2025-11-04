@@ -1,10 +1,10 @@
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import NextAuth from "next-auth";
+import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma as any),
   secret: process.env.NEXTAUTH_SECRET,
   // Use JWT session strategy for credentials sign-in compatibility.
@@ -29,7 +29,7 @@ export const authOptions = {
           user.hashedPassword
         );
         if (!valid) return null;
-        return { id: String(user.id), email: user.email, name: user.name };
+        return { id: user.id, email: user.email, name: user.name };
       },
     }),
   ],
@@ -37,14 +37,14 @@ export const authOptions = {
     // Persist user id into the JWT the first time user signs in
     async jwt({ token, user }: any) {
       if (user) {
-        token.id = String((user as any).id ?? token.sub);
+        token.id = parseInt(user.id);
       }
       return token;
     },
     // Make the user id available in `useSession()` and `getSession()`
     async session({ session, token }: any) {
       if (session?.user) {
-        session.user.id = String(token.id ?? token.sub);
+        session.user.id = token.id;
       }
       return session;
     },
