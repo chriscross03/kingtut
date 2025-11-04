@@ -1,11 +1,10 @@
 // app/api/courses/[slug]/.../question-sets/[questionSetSlug]/finalize/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@/generated/prisma";
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import authOptions from "@/lib/auth";
-
-const prisma = new PrismaClient();
+import { updateSkillProficiency } from "@/lib/proficiency-updater/skill-proficiency";
 
 interface FinalizeQuizBody {
   quizAttemptId: number;
@@ -82,6 +81,13 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
+    if (quizAttempt.isCompleted) {
+      return NextResponse.json(
+        { error: "Quiz attempt already finalized" },
+        { status: 400 }
+      );
+    }
+
     // Calculate final score
     const totalPoints = quizAttempt.questionSet.questions.reduce(
       (sum, q) => sum + q.points,
@@ -102,7 +108,7 @@ export async function POST(
     const updatedAttempt = await prisma.quizAttempt.update({
       where: { id: quizAttemptId },
       data: {
-        score: percentage,
+        earnedPoints: pointsEarned,
         totalPoints,
         percentage,
         completedAt: new Date(),
@@ -132,68 +138,5 @@ export async function POST(
       { error: "Internal server error" },
       { status: 500 }
     );
-  }
-}
-
-// Helper function to update skill proficiency
-async function updateSkillProficiency(
-  userId: number,
-  skillId: number,
-  newScore: number
-) {
-  try {
-    const existing = await prisma.skillProficiency.findUnique({
-      where: {
-        userId_skillId: {
-          userId,
-          skillId,
-        },
-      },
-    });
-
-    if (existing) {
-      const updatedScore = existing.score * 0.7 + newScore * 0.3;
-      let level: "BEGINNING" | "INTERMEDIATE" | "ADVANCED" | "SIGMA" =
-        "BEGINNING";
-      if (updatedScore >= 90) level = "SIGMA";
-      else if (updatedScore >= 75) level = "ADVANCED";
-      else if (updatedScore >= 50) level = "INTERMEDIATE";
-
-      await prisma.skillProficiency.update({
-        where: {
-          userId_skillId: {
-            userId,
-            skillId,
-          },
-        },
-        data: {
-          score: updatedScore,
-          level,
-          questionsAnswered: { increment: 1 },
-          questionSetsCompleted: { increment: 1 },
-          lastUpdated: new Date(),
-        },
-      });
-    } else {
-      let level: "BEGINNING" | "INTERMEDIATE" | "ADVANCED" | "SIGMA" =
-        "BEGINNING";
-      if (newScore >= 90) level = "SIGMA";
-      else if (newScore >= 75) level = "ADVANCED";
-      else if (newScore >= 50) level = "INTERMEDIATE";
-
-      await prisma.skillProficiency.create({
-        data: {
-          userId,
-          skillId,
-          score: newScore,
-          level,
-          questionsAnswered: 1,
-          questionSetsCompleted: 1,
-          lastUpdated: new Date(),
-        },
-      });
-    }
-  } catch (error) {
-    console.error("Error updating skill proficiency:", error);
   }
 }

@@ -1,11 +1,9 @@
 // app/api/courses/[slug]/.../question-sets/[questionSetSlug]/submit-question/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@/generated/prisma";
 import { getServerSession } from "next-auth/next";
 import authOptions from "@/lib/auth";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 interface SubmitQuestionBody {
   questionSetId: number;
@@ -96,7 +94,7 @@ export async function POST(
         data: {
           userId,
           questionSetId,
-          score: 0,
+          earnedPoints: 0,
           totalPoints: 0,
           percentage: 0,
           startedAt: new Date(),

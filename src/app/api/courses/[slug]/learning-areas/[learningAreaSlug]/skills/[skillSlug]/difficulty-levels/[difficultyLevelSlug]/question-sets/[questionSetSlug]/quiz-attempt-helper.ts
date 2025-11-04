@@ -1,7 +1,5 @@
-import { PrismaClient } from "@/generated/prisma";
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-
-const prisma = new PrismaClient();
 
 /**
  * Get quiz attempt with full details
@@ -40,10 +38,7 @@ export async function getQuizAttemptWithDetails(quizAttemptId: number) {
   });
 
   if (!quizAttempt) {
-    throw NextResponse.json(
-      { error: "Quiz attempt not found" },
-      { status: 404 }
-    );
+    throw new Error("Quiz attempt not found");
   }
 
   return quizAttempt;
@@ -81,12 +76,25 @@ export async function getOrCreateQuizAttempt(
     return existing;
   }
 
+  const ongoingAttempt = await prisma.quizAttempt.findFirst({
+    where: {
+      userId,
+      questionSetId,
+      isCompleted: false,
+    },
+  });
+
+  if (ongoingAttempt) {
+    // Option 1: just return it
+    return ongoingAttempt;
+  }
+
   // Create new attempt
   const newAttempt = await prisma.quizAttempt.create({
     data: {
       userId,
       questionSetId,
-      score: 0,
+      earnedPoints: 0,
       totalPoints: 0,
       percentage: 0,
       startedAt: new Date(),

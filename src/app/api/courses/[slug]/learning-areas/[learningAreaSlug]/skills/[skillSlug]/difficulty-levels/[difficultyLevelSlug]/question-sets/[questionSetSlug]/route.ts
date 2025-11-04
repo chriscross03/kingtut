@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@/generated/prisma";
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-
-const prisma = new PrismaClient();
 
 export async function GET(
   request: NextRequest,
@@ -22,7 +20,6 @@ export async function GET(
   try {
     // Check authentication
     const session = await getServerSession(authOptions);
-    console.log("session", session);
     if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "You must be logged in to access quizzes" },
