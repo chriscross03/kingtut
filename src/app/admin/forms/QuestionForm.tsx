@@ -194,6 +194,41 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           ))}
         </select>
       </label>
+
+      {/* Question Type */}
+      <label style={{ display: "grid", gap: 6 }}>
+        <span>Question Type *</span>
+        <select
+          required
+          value={formData.questionType || "MULTIPLE_CHOICE"}
+          onChange={(e) => handleInputChange("questionType", e.target.value)}
+          style={{
+            padding: 8,
+            border: "1px solid #d1d5db",
+            borderRadius: 6,
+          }}
+        >
+          <option value="MULTIPLE_CHOICE">Multiple Choice</option>
+          <option value="TRUE_FALSE">True/False</option>
+          <option value="SHORT_ANSWER">Short Answer</option>
+        </select>
+      </label>
+
+      {/* Points */}
+      <label style={{ display: "grid", gap: 6 }}>
+        <span>Points *</span>
+        <input
+          type="number"
+          required
+          min={1}
+          value={formData.points || 1}
+          onChange={(e) =>
+            handleInputChange("points", parseInt(e.target.value) || 1)
+          }
+          style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 6 }}
+        />
+      </label>
+
       <label style={{ display: "grid", gap: 6 }}>
         <span>Question Text *</span>
         <textarea
@@ -210,34 +245,128 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           }}
         />
       </label>
-      <label style={{ display: "grid", gap: 6 }}>
-        <span>Answer Options (JSON format) *</span>
-        <textarea
-          required
-          placeholder='["A) Option 1", "B) Option 2", "C) Option 3", "D) Option 4"]'
-          rows={3}
-          value={formData.options || ""}
-          onChange={(e) => handleInputChange("options", e.target.value)}
-          style={{
-            padding: 8,
-            border: "1px solid #d1d5db",
-            borderRadius: 6,
-            resize: "vertical",
-            fontFamily: "monospace",
-          }}
-        />
-      </label>
-      <label style={{ display: "grid", gap: 6 }}>
-        <span>Correct Answer *</span>
-        <input
-          type="text"
-          required
-          placeholder="e.g., A, B, C, or D"
-          value={formData.correctAnswer || ""}
-          onChange={(e) => handleInputChange("correctAnswer", e.target.value)}
-          style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 6 }}
-        />
-      </label>
+
+      {/* Answer Options */}
+      <div style={{ display: "grid", gap: 6 }}>
+        <span>Answer Options *</span>
+        <div style={{ display: "grid", gap: 8 }}>
+          {(
+            formData.options || [
+              { optionText: "", isCorrect: false, orderIndex: 0 },
+              { optionText: "", isCorrect: false, orderIndex: 1 },
+              { optionText: "", isCorrect: false, orderIndex: 2 },
+              { optionText: "", isCorrect: false, orderIndex: 3 },
+            ]
+          ).map((option: any, index: number) => (
+            <div
+              key={index}
+              style={{ display: "flex", gap: 8, alignItems: "center" }}
+            >
+              <input
+                type={
+                  formData.questionType === "MULTIPLE_CHOICE"
+                    ? "radio"
+                    : "checkbox"
+                }
+                name="correctAnswer"
+                checked={option.isCorrect}
+                onChange={(e) => {
+                  const newOptions = [...(formData.options || [])];
+                  if (
+                    formData.questionType === "MULTIPLE_CHOICE" ||
+                    formData.questionType === "TRUE_FALSE"
+                  ) {
+                    // Single selection: uncheck all others
+                    newOptions.forEach((opt: any, i: number) => {
+                      opt.isCorrect = i === index;
+                    });
+                  } else {
+                    newOptions[index].isCorrect = e.target.checked;
+                  }
+                  handleInputChange("options", newOptions);
+                }}
+                style={{ width: 16, height: 16 }}
+              />
+              <input
+                type="text"
+                required
+                placeholder={`Option ${index + 1}`}
+                value={option.optionText}
+                onChange={(e) => {
+                  const newOptions = [...(formData.options || [])];
+                  newOptions[index].optionText = e.target.value;
+                  handleInputChange("options", newOptions);
+                }}
+                style={{
+                  flex: 1,
+                  padding: 8,
+                  border: "1px solid #d1d5db",
+                  borderRadius: 6,
+                }}
+              />
+              {formData.questionType === "MULTIPLE_CHOICE" &&
+                (formData.options || []).length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newOptions = (formData.options || []).filter(
+                        (_: any, i: number) => i !== index
+                      );
+                      newOptions.forEach((opt: any, i: number) => {
+                        opt.orderIndex = i;
+                      });
+                      handleInputChange("options", newOptions);
+                    }}
+                    style={{
+                      padding: "8px 12px",
+                      background: "#ef4444",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 6,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Remove
+                  </button>
+                )}
+            </div>
+          ))}
+        </div>
+        {formData.questionType === "MULTIPLE_CHOICE" && (
+          <button
+            type="button"
+            onClick={() => {
+              const newOptions = [
+                ...(formData.options || []),
+                {
+                  optionText: "",
+                  isCorrect: false,
+                  orderIndex: (formData.options || []).length,
+                },
+              ];
+              handleInputChange("options", newOptions);
+            }}
+            style={{
+              padding: "8px 12px",
+              background: "#e5e7eb",
+              border: "none",
+              borderRadius: 6,
+              cursor: "pointer",
+              width: "fit-content",
+            }}
+          >
+            + Add Option
+          </button>
+        )}
+        <p style={{ fontSize: 12, color: "#6b7280" }}>
+          {formData.questionType === "MULTIPLE_CHOICE" ||
+          formData.questionType === "TRUE_FALSE"
+            ? "Select the correct answer"
+            : "Check all acceptable answers"}
+        </p>
+      </div>
+
+      {/* Answer Explaination */}
       <label style={{ display: "grid", gap: 6 }}>
         <span>Explanation</span>
         <textarea
@@ -253,6 +382,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           }}
         />
       </label>
+
+      {/* Submit button */}
       <button
         type="submit"
         disabled={
@@ -263,7 +394,9 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           !formData.questionSetId ||
           !formData.questionText ||
           !formData.options ||
-          !formData.correctAnswer
+          (formData.options || []).length === 0 ||
+          (formData.options || []).some((opt: any) => !opt.optionText) ||
+          !(formData.options || []).some((opt: any) => opt.isCorrect)
         }
         style={{
           padding: "10px 16px",
@@ -275,7 +408,9 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
             !formData.questionSetId ||
             !formData.questionText ||
             !formData.options ||
-            !formData.correctAnswer
+            (formData.options || []).length === 0 ||
+            (formData.options || []).some((opt: any) => !opt.optionText) ||
+            !(formData.options || []).some((opt: any) => opt.isCorrect)
               ? "#cbd5e1"
               : "#111827",
           color: "white",
@@ -289,7 +424,9 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
             !formData.questionSetId ||
             !formData.questionText ||
             !formData.options ||
-            !formData.correctAnswer
+            (formData.options || []).length === 0 ||
+            (formData.options || []).some((opt: any) => !opt.optionText) ||
+            !(formData.options || []).some((opt: any) => opt.isCorrect)
               ? "not-allowed"
               : "pointer",
         }}

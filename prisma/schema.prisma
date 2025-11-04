@@ -77,7 +77,13 @@ model DifficultyLevel {
 
 model QuestionSet {
   id                Int             @id @default(autoincrement())
-  number            Int             // 1, 2, 3, 4, 5
+  title             String          
+  slug              String          
+  description       String?         
+  number            Int             
+  totalQuestions    Int             @default(0)
+  totalPoints       Int             @default(0)
+  estimatedMinutes  Int             @default(15)
   difficultyLevelId Int
   isActive          Boolean         @default(true)
   createdAt         DateTime        @default(now())

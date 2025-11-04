@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CourseForm from "./forms/CourseForm";
 import LearningAreaForm from "./forms/LearningAreaForm";
 import SkillForm from "./forms/SkillForm";
@@ -10,6 +10,7 @@ import QuestionForm from "./forms/QuestionForm";
 import { useResourceData } from "../../hooks/useResourceData";
 import { useFormData } from "../../hooks/useFormData";
 import BackLink from "@/components/BackLink";
+import { useAdminResourceData } from "../../hooks/useAdminResourceData";
 
 type ContentType =
   | "course"
@@ -21,9 +22,37 @@ type ContentType =
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<ContentType>("course");
-  const [formData, setFormData, handleInputChange] = useFormData<
-    Record<string, any>
-  >({});
+  const [formData, setFormData] = useState<Record<string, any>>({
+    questionType: "MULTIPLE_CHOICE",
+    points: 1,
+    options: [
+      { optionText: "", isCorrect: false, orderIndex: 0 },
+      { optionText: "", isCorrect: false, orderIndex: 1 },
+      { optionText: "", isCorrect: false, orderIndex: 2 },
+      { optionText: "", isCorrect: false, orderIndex: 3 },
+    ],
+  });
+
+  const handleInputChange = (name: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  useEffect(() => {
+    if (formData.questionType === "TRUE_FALSE") {
+      handleInputChange("options", [
+        { optionText: "True", isCorrect: false, orderIndex: 0 },
+        { optionText: "False", isCorrect: false, orderIndex: 1 },
+      ]);
+    } else if (formData.questionType === "MULTIPLE_CHOICE") {
+      handleInputChange("options", [
+        { optionText: "", isCorrect: false, orderIndex: 0 },
+        { optionText: "", isCorrect: false, orderIndex: 1 },
+        { optionText: "", isCorrect: false, orderIndex: 2 },
+        { optionText: "", isCorrect: false, orderIndex: 3 },
+      ]);
+    }
+  }, [formData.questionType]);
+
   const {
     courses,
     learningAreas,
@@ -31,7 +60,7 @@ export default function AdminPage() {
     difficultyLevels,
     questionSets,
     questions,
-  } = useResourceData();
+  } = useAdminResourceData(activeTab);
 
   // Helper function to get learning areas for a specific course
   const getLearningAreasByCourse = (courseId: number) => {

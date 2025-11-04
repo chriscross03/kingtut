@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "../../../../generated/prisma";
 import type {
+  QuestionType,
+  QuestionOption,
   Question,
   QuestionSet,
   Skill,
   DifficultyLevel,
   LearningArea,
   Course,
-} from "../../../../generated/prisma";
+} from "@/generated/prisma";
 
 const prisma = new PrismaClient();
 
@@ -30,6 +32,7 @@ type QuestionSetWithRelations = QuestionSet & {
 
 type QuestionWithRelations = Question & {
   questionSet: QuestionSetWithRelations;
+  options: QuestionOption[];
 };
 
 // Response types
@@ -46,15 +49,31 @@ interface ErrorResponse {
   error: string;
 }
 
+// Request body type
+interface CreateQuestionBody {
+  questionText: string;
+  questionType: QuestionType;
+  points?: number;
+  options: Array<{
+    optionText: string;
+    isCorrect: boolean;
+    orderIndex?: number;
+  }>;
+  explanation?: string;
+  questionSetId: string | number;
+  isActive?: boolean;
+}
+
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<QuestionResponse | ErrorResponse>> {
   try {
-    const body = await request.json();
+    const body: CreateQuestionBody = await request.json();
     const {
       questionText,
+      questionType = "MULTIPLE_CHOICE",
+      points = 1,
       options,
-      correctAnswer,
       explanation,
       questionSetId,
       isActive = true,
@@ -75,9 +94,30 @@ export async function POST(
       );
     }
 
-    if (!correctAnswer) {
+    if (!options || !Array.isArray(options) || options.length === 0) {
       return NextResponse.json(
-        { error: "Correct answer is required" },
+        { error: "At least one answer option is required" },
+        { status: 400 }
+      );
+    }
+
+    const hasCorrectAnswer = options.some((opt) => opt.isCorrect);
+    if (!hasCorrectAnswer) {
+      return NextResponse.json(
+        { error: "At least one option must be marked as correct" },
+        { status: 400 }
+      );
+    }
+
+    if (
+      (questionType === "MULTIPLE_CHOICE" || questionType === "TRUE_FALSE") &&
+      options.filter((opt) => opt.isCorrect).length > 1
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Only one option can be correct for multiple choice and true/false questions",
+        },
         { status: 400 }
       );
     }
@@ -89,7 +129,7 @@ export async function POST(
       );
     }
 
-    const parsedQuestionSetId = parseInt(questionSetId);
+    const parsedQuestionSetId = parseInt(questionSetId.toString());
 
     // Verify the question set exists
     const questionSet: QuestionSetWithRelations | null =
@@ -143,11 +183,18 @@ export async function POST(
     const question: QuestionWithRelations = await prisma.question.create({
       data: {
         questionText,
-        options: parsedOptions,
-        correctAnswer,
+        questionType,
+        points,
         explanation: explanation || null,
         questionSetId: parsedQuestionSetId,
         isActive,
+        options: {
+          create: options.map((option, index) => ({
+            optionText: option.optionText,
+            isCorrect: option.isCorrect,
+            orderIndex: option.orderIndex ?? index,
+          })),
+        },
       },
       include: {
         questionSet: {
@@ -167,6 +214,28 @@ export async function POST(
             },
           },
         },
+        options: {
+          orderBy: {
+            orderIndex: "asc",
+          },
+        },
+      },
+    });
+
+    const totalQuestions = await prisma.question.count({
+      where: { questionSetId: parsedQuestionSetId, isActive: true },
+    });
+
+    const totalPointsResult = await prisma.question.aggregate({
+      where: { questionSetId: parsedQuestionSetId, isActive: true },
+      _sum: { points: true },
+    });
+
+    await prisma.questionSet.update({
+      where: { id: parsedQuestionSetId },
+      data: {
+        totalQuestions,
+        totalPoints: totalPointsResult._sum.points || 0,
       },
     });
 
@@ -207,6 +276,11 @@ export async function GET(): Promise<
                 },
               },
             },
+          },
+        },
+        options: {
+          orderBy: {
+            orderIndex: "asc",
           },
         },
       },

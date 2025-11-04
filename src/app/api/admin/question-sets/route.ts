@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "../../../../generated/prisma";
+import { PrismaClient } from "@/generated/prisma";
 import type {
   QuestionSet,
   Skill,
   DifficultyLevel,
   LearningArea,
   Course,
-} from "../../../../generated/prisma";
+} from "@/generated/prisma";
 
 const prisma = new PrismaClient();
 
@@ -46,9 +46,10 @@ export async function POST(
 ): Promise<NextResponse<QuestionSetResponse | ErrorResponse>> {
   try {
     const body = await request.json();
-    const { number, skillId, difficultyLevelId, isActive = true } = body;
+    const { description, number, difficultyLevelId, isActive = true } = body;
 
     // Validate required fields
+
     if (!number) {
       return NextResponse.json(
         { error: "Question set number is required" },
@@ -56,12 +57,6 @@ export async function POST(
       );
     }
 
-    if (!skillId) {
-      return NextResponse.json(
-        { error: "Skill selection is required" },
-        { status: 400 }
-      );
-    }
     if (!difficultyLevelId) {
       return NextResponse.json(
         { error: "Difficulty level selection is required" },
@@ -77,6 +72,9 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    const title = `Question Set ${number}`;
+    const slug = `question-set-${number}`;
 
     const parsedDifficultyLevelId = parseInt(difficultyLevelId);
 
@@ -126,6 +124,9 @@ export async function POST(
     const questionSet: QuestionSetWithRelations =
       await prisma.questionSet.create({
         data: {
+          title,
+          slug,
+          description: description || null,
           number: questionNumber,
           difficultyLevelId: parsedDifficultyLevelId,
           isActive,
