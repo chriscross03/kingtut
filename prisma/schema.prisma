@@ -192,7 +192,7 @@ model QuizAttempt {
   id            Int             @id @default(autoincrement())
   userId        Int
   questionSetId Int
-  score         Float?          // Percentage score (0-100)
+  earnedPoints  Int             // total points earned
   totalPoints   Int             // Maximum possible points
   percentage    Float           // Calculated percentage (0-100)
   passed        Boolean         @default(false) // Whether they passed (e.g., >= 70%)

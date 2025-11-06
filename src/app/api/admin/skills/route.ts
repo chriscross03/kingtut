@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "../../../../generated/prisma";
+import { prisma } from "@/lib/prisma";
 import slugify from "slugify";
 import type {
   Skill,
@@ -7,8 +7,6 @@ import type {
   LearningArea,
   Course,
 } from "../../../../generated/prisma";
-
-const prisma = new PrismaClient();
 
 // Type for nested relations
 type LearningAreaWithCourse = LearningArea & {

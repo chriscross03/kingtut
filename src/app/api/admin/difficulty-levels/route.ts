@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "../../../../generated/prisma";
 import slugify from "slugify";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 // POST - Create a new difficulty level
 export async function POST(request: NextRequest) {

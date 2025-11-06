@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@/generated/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth-helper";
 
 export async function GET(
   request: NextRequest,
@@ -20,15 +17,8 @@ export async function GET(
   }
 ) {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    console.log("session", session);
-    if (!session || !session.user?.id) {
-      return NextResponse.json(
-        { error: "You must be logged in to access quizzes" },
-        { status: 401 }
-      );
-    }
+    // ✅ Require authentication using your helper
+    const currentUser = await requireAuth();
 
     const {
       slug,
@@ -38,7 +28,7 @@ export async function GET(
       questionSetSlug,
     } = await params;
 
-    // Find the question set through the full hierarchy
+    // ✅ Find the question set (same logic as before)
     const questionSet = await prisma.questionSet.findFirst({
       where: {
         slug: questionSetSlug,
@@ -70,7 +60,6 @@ export async function GET(
                 id: true,
                 optionText: true,
                 orderIndex: true,
-                // Don't include isCorrect - we don't want to leak answers
               },
             },
           },
@@ -99,36 +88,33 @@ export async function GET(
       );
     }
 
-    // Format response - remove explanation and points from questions (don't leak answers)
+    // ✅ Sanitize response (don’t leak correct answers)
     const sanitizedQuestions = questionSet.questions.map((q) => ({
       id: q.id,
       questionText: q.questionText,
       questionType: q.questionType,
-      points: q.points, // Keep points so users know how much each is worth
+      points: q.points,
       options: q.options,
     }));
 
     return NextResponse.json({
-      questionSet: {
-        id: questionSet.id,
-        title: questionSet.title,
-        slug: questionSet.slug,
-        description: questionSet.description,
-        number: questionSet.number,
-        totalQuestions: questionSet.totalQuestions,
-        totalPoints: questionSet.totalPoints,
-        estimatedMinutes: questionSet.estimatedMinutes,
-        questions: sanitizedQuestions,
-        difficultyLevel: {
-          name: questionSet.difficultyLevel.name,
-          skill: {
-            name: questionSet.difficultyLevel.skill.name,
-            learningArea: {
-              name: questionSet.difficultyLevel.skill.learningArea.name,
-              course: {
-                name: questionSet.difficultyLevel.skill.learningArea.course
-                  .name,
-              },
+      id: questionSet.id,
+      title: questionSet.title,
+      slug: questionSet.slug,
+      description: questionSet.description,
+      number: questionSet.number,
+      totalQuestions: questionSet.totalQuestions,
+      totalPoints: questionSet.totalPoints,
+      estimatedMinutes: questionSet.estimatedMinutes,
+      questions: sanitizedQuestions,
+      difficultyLevel: {
+        name: questionSet.difficultyLevel.name,
+        skill: {
+          name: questionSet.difficultyLevel.skill.name,
+          learningArea: {
+            name: questionSet.difficultyLevel.skill.learningArea.name,
+            course: {
+              name: questionSet.difficultyLevel.skill.learningArea.course.name,
             },
           },
         },
