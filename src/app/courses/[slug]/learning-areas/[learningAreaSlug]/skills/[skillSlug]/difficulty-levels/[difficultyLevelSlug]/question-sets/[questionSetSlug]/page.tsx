@@ -5,6 +5,7 @@ import BackLink from "../../../../../../../../../../../components/BackLink";
 import { useParams, useRouter } from "next/navigation";
 import { useFetchResource } from "@/hooks/useFetchResource";
 import type { QuestionSet } from "@/generated/prisma";
+import { useFetchSingleResource } from "@/hooks/useFetchSingeResource";
 
 function QuestionSetClient() {
   const params = useParams();
@@ -24,15 +25,16 @@ function QuestionSetClient() {
     questionSetSlug: string;
   };
 
-  const { data, loading, error } = useFetchResource<QuestionSet>(
+  const {
+    data: fetchedQuestionSet,
+    loading,
+    error,
+  } = useFetchSingleResource<QuestionSet>(
     `/api/courses/${courseSlug}/learning-areas/${learningAreaSlug}/skills/${skillSlug}/difficulty-levels/${difficultyLevelSlug}/question-sets/${questionSetSlug}`
   );
-  console.log(questionSetSlug);
-  const questionSet = data?.[0];
-  console.log("questionSet:", questionSet);
-  console.log(data);
+
+  const questionSet = fetchedQuestionSet;
   const handleStartQuiz = () => {
-    console.log("sigma");
     router.push(
       `/courses/${courseSlug}/learning-areas/${learningAreaSlug}/skills/${skillSlug}/difficulty-levels/${difficultyLevelSlug}/question-sets/${questionSetSlug}/quiz`
     );

@@ -9,6 +9,7 @@ import { useFetchResource } from "@/hooks/useFetchResource";
 import type { Question } from "@/generated/prisma";
 import type { QuestionSet } from "@/generated/prisma";
 import { QuestionWithOptions } from "@/lib/score-calculator";
+import { useFetchSingleResource } from "@/hooks/useFetchSingeResource";
 
 interface QuestionSetWithQuestions extends QuestionSet {
   questions: QuestionWithOptions[];
@@ -38,11 +39,26 @@ export default function QuizPage({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch question set
-  const { data, loading, error } = useFetchResource<QuestionSetWithQuestions>(
+  const {
+    data: fetchedQuestionSet,
+    loading,
+    error,
+  } = useFetchSingleResource<QuestionSetWithQuestions>(
+    `/api/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}`
+  );
+  console.log(
     `/api/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}`
   );
 
-  const questionSet = data[0];
+  console.log(fetchedQuestionSet);
+
+  const questionSet = fetchedQuestionSet;
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error loading question set.</p>;
+  if (!questionSet || !questionSet.questions) {
+    return <p>No questions found for this set.</p>;
+  }
   const questions: QuestionWithOptions[] =
     questionSet?.questions.map((q) => ({
       id: q.id,
@@ -116,7 +132,7 @@ export default function QuizPage({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             answers,
-            questionSetId: questionSet.id,
+            questionSetId: questionSet?.id,
           }),
         }
       );
