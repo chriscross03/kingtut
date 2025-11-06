@@ -10,6 +10,10 @@ import type { Question } from "@/generated/prisma";
 import type { QuestionSet } from "@/generated/prisma";
 import { QuestionWithOptions } from "@/lib/score-calculator";
 import { useFetchSingleResource } from "@/hooks/useFetchSingeResource";
+import SubmitButton from "./question-nav-components/SubmitButton";
+import PreviousButton from "./question-nav-components/PreviousButton";
+import JumpToNavigation from "./question-nav-components/JumpNavigation";
+import NextButton from "./question-nav-components/NextButton";
 
 interface QuestionSetWithQuestions extends QuestionSet {
   questions: QuestionWithOptions[];
@@ -63,6 +67,7 @@ export default function QuizPage({
   if (!questionSet || !questionSet.questions) {
     return <p>No questions found for this set.</p>;
   }
+
   const questions: QuestionWithOptions[] =
     questionSet?.questions.map((q) => ({
       id: q.id,
@@ -207,71 +212,33 @@ export default function QuizPage({
           />
         </div>
 
-        {/* Navigation */}
         <div className="mt-8 flex justify-between items-center">
-          <button
-            onClick={handlePrevious}
+          <PreviousButton
+            onPrevious={handlePrevious}
             disabled={currentQuestionIndex === 0}
-            className="px-6 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-          >
-            Previous
-          </button>
+          />
 
           <div className="text-sm text-gray-600">
             Question {currentQuestionIndex + 1} of {questions.length}
           </div>
 
           {!isLastQuestion ? (
-            <button
-              onClick={handleNext}
-              disabled={!canProceed}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
-            >
-              Next
-            </button>
+            <NextButton onNext={handleNext} disabled={!canProceed} />
           ) : (
-            <button
-              onClick={handleSubmit}
+            <SubmitButton
+              onSubmit={handleSubmit}
               disabled={!canProceed || isSubmitting}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-700"
-            >
-              {isSubmitting ? "Submitting..." : "Submit Quiz"}
-            </button>
+              isSubmitting={isSubmitting}
+            />
           )}
         </div>
 
-        {/* Question Navigation Grid */}
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-medium mb-3">Jump to Question:</h3>
-          <div className="grid grid-cols-10 gap-2">
-            {questions.map((q, idx) => {
-              const isAnswered = answers.some((a) => a.questionId === q.id);
-              const isCurrent = idx === currentQuestionIndex;
-              return (
-                <button
-                  key={q.id}
-                  onClick={() => setCurrentQuestionIndex(idx)}
-                  className={`
-                    w-10 h-10 rounded-lg border-2 text-sm font-medium
-                    ${isCurrent ? "border-blue-600 bg-blue-600 text-white" : ""}
-                    ${
-                      !isCurrent && isAnswered
-                        ? "border-green-600 bg-green-100 text-green-800"
-                        : ""
-                    }
-                    ${
-                      !isCurrent && !isAnswered
-                        ? "border-gray-300 bg-white hover:bg-gray-50"
-                        : ""
-                    }
-                  `}
-                >
-                  {idx + 1}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <JumpToNavigation
+          questions={questions}
+          currentQuestionIndex={currentQuestionIndex}
+          answers={answers}
+          onJumpTo={setCurrentQuestionIndex}
+        />
       </div>
     </PageLayout>
   );
