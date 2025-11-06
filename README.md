@@ -38,3 +38,10 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 npm run dev then goon
 npx prisma studio
 DATABASE_URL="file:./dev.db"
+
+
+## TODO
+- make the code readable/modular
+- figure out something to do with validation
+- figure out question generation/importation
+- find out if theres a way to clean up endpoints
