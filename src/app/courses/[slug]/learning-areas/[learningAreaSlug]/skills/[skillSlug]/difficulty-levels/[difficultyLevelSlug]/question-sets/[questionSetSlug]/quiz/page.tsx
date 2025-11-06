@@ -12,6 +12,7 @@ export default function Quizz() {
     skillSlug: string;
     difficultyLevelSlug: string;
     questionSetSlug: string;
+    quizAttemptId: string;
   };
 
   return <QuizPage params={params} />;

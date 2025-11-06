@@ -34,10 +34,36 @@ function QuestionSetClient() {
   );
 
   const questionSet = fetchedQuestionSet;
-  const handleStartQuiz = () => {
-    router.push(
-      `/courses/${courseSlug}/learning-areas/${learningAreaSlug}/skills/${skillSlug}/difficulty-levels/${difficultyLevelSlug}/question-sets/${questionSetSlug}/quiz`
-    );
+  const handleStartQuiz = async () => {
+    if (!questionSet) {
+      console.warn("Question set not loaded yet.");
+      return;
+    }
+    try {
+      // Step 1: create a new quiz attempt
+      const response = await fetch(
+        `/api/courses/${courseSlug}/learning-areas/${learningAreaSlug}/skills/${skillSlug}/difficulty-levels/${difficultyLevelSlug}/question-sets/${questionSetSlug}/begin-quiz`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ questionSetId: questionSet.id }), // make sure you have this value available
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to start quiz attempt");
+      }
+
+      const result = await response.json();
+
+      // Step 2: redirect to the quiz page with quizAttemptId
+      router.push(
+        `/courses/${courseSlug}/learning-areas/${learningAreaSlug}/skills/${skillSlug}/difficulty-levels/${difficultyLevelSlug}/question-sets/${questionSetSlug}/quiz?quizAttemptId=${result.quizAttemptId}`
+      );
+    } catch (error) {
+      console.error("Error starting quiz attempt:", error);
+      alert("Could not start quiz. Please try again.");
+    }
   };
 
   if (loading) return <p>Loading...</p>;

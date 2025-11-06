@@ -14,6 +14,8 @@ import SubmitButton from "./question-nav-components/SubmitButton";
 import PreviousButton from "./question-nav-components/PreviousButton";
 import JumpToNavigation from "./question-nav-components/JumpNavigation";
 import NextButton from "./question-nav-components/NextButton";
+import { useSubmitQuestion } from "@/hooks/useSubmitQuestion";
+import BackLink from "@/components/BackLink";
 
 interface QuestionSetWithQuestions extends QuestionSet {
   questions: QuestionWithOptions[];
@@ -34,6 +36,7 @@ export default function QuizPage({
     skillSlug: string;
     difficultyLevelSlug: string;
     questionSetSlug: string;
+    quizAttemptId: string;
   };
 }) {
   const router = useRouter();
@@ -41,6 +44,7 @@ export default function QuizPage({
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { submitQuestion } = useSubmitQuestion();
 
   // Fetch question set
   const {
@@ -109,12 +113,52 @@ export default function QuizPage({
     });
   };
 
-  const handleSubmitQuestion = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
+  const handleSubmitQuestion = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      const question = questions[currentQuestionIndex];
+
+      // find the most recent answer object for this question
+      const userAnswer = answers.find((a) => a.questionId === question.id);
+
+      if (!userAnswer) {
+        console.warn("No answer provided for current question.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+
+      const result = await submitQuestion({
+        questionSetId: questionSet.id,
+        questionId: question.id,
+        answer:
+          typeof userAnswer.answer === "string"
+            ? userAnswer.answer
+            : userAnswer.answer.join(","),
+        timeSpent,
+        quizAttemptId: parseInt(params.quizAttemptId), // this is the next part we’ll address
+        courseSlug: params.slug,
+        learningAreaSlug: params.learningAreaSlug,
+        skillSlug: params.skillSlug,
+        difficultyLevelSlug: params.difficultyLevelSlug,
+        questionSetSlug: params.questionSetSlug,
+      });
+
+      console.log("Question submitted:", result);
+
+      // move to next question
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex((prev) => prev + 1);
+      }
+    } catch (error) {
+      console.error("Error submitting question:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex((prev) => prev - 1);
@@ -189,6 +233,8 @@ export default function QuizPage({
       title={questionSet.title}
       subtitle={questionSet.description || ""}
     >
+      <BackLink href="/courses" label="back to courses" />
+
       <div className="max-w-4xl mx-auto">
         {/* Progress Bar */}
         <QuizProgress
