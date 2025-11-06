@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 /**
  * Get quiz attempt with full details
  */
+
 export async function getQuizAttemptWithDetails(quizAttemptId: number) {
   const quizAttempt = await prisma.quizAttempt.findUnique({
     where: { id: quizAttemptId },
@@ -18,79 +19,54 @@ export async function getQuizAttemptWithDetails(quizAttemptId: number) {
             },
           },
         },
-        orderBy: {
-          createdAt: "asc",
-        },
+        orderBy: { createdAt: "asc" },
       },
       questionSet: {
         include: {
-          questions: {
-            where: { isActive: true },
-          },
-          difficultyLevel: {
-            include: {
-              skill: true,
-            },
-          },
+          questions: { where: { isActive: true } },
+          difficultyLevel: { include: { skill: true } },
         },
       },
     },
   });
 
   if (!quizAttempt) {
-    throw new Error("Quiz attempt not found");
+    throw NextResponse.json(
+      { error: "Quiz attempt not found" },
+      { status: 404 }
+    );
   }
 
   return quizAttempt;
 }
 
-/**
- * Get or create quiz attempt
- */
-export async function getOrCreateQuizAttempt(
-  userId: number,
-  questionSetId: number,
-  quizAttemptId?: number
-) {
-  // If attemptId provided, get existing
-  if (quizAttemptId) {
-    const existing = await prisma.quizAttempt.findUnique({
-      where: { id: quizAttemptId },
-    });
-
-    if (!existing) {
-      throw NextResponse.json(
-        { error: "Quiz attempt not found" },
-        { status: 404 }
-      );
-    }
-
-    // Verify ownership
-    if (existing.userId !== userId) {
-      throw NextResponse.json(
-        { error: "Unauthorized access to quiz attempt" },
-        { status: 403 }
-      );
-    }
-
-    return existing;
-  }
-
-  const ongoingAttempt = await prisma.quizAttempt.findFirst({
-    where: {
-      userId,
-      questionSetId,
-      isCompleted: false,
-    },
+export async function getQuizAttempt(userId: number, quizAttemptId: number) {
+  const attempt = await prisma.quizAttempt.findUnique({
+    where: { id: quizAttemptId },
   });
 
-  if (ongoingAttempt) {
-    // Option 1: just return it
-    return ongoingAttempt;
+  if (!attempt) {
+    throw NextResponse.json(
+      { error: "Quiz attempt not found" },
+      { status: 404 }
+    );
   }
 
-  // Create new attempt
-  const newAttempt = await prisma.quizAttempt.create({
+  if (attempt.userId !== userId) {
+    throw NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  return attempt;
+}
+
+export async function createQuizAttempt(userId: number, questionSetId: number) {
+  const ongoing = await prisma.quizAttempt.findFirst({
+    where: { userId, questionSetId, isCompleted: false },
+  });
+
+  if (ongoing) return ongoing;
+
+  return await prisma.quizAttempt.create({
     data: {
       userId,
       questionSetId,
@@ -102,51 +78,17 @@ export async function getOrCreateQuizAttempt(
       isCompleted: false,
     },
   });
-
-  return newAttempt;
 }
 
-/**
- * Get user's latest quiz attempt for a question set
- */
-export async function getLatestQuizAttempt(
-  userId: number,
-  questionSetId: number
-) {
-  return await prisma.quizAttempt.findFirst({
-    where: {
-      userId,
-      questionSetId,
-      isCompleted: false,
-    },
-    orderBy: {
-      startedAt: "desc",
-    },
-  });
-}
-
-/**
- * Get all completed quiz attempts for a user and question set
- */
 export async function getCompletedQuizAttempts(
   userId: number,
   questionSetId: number
 ) {
   return await prisma.quizAttempt.findMany({
-    where: {
-      userId,
-      questionSetId,
-      isCompleted: true,
-    },
-    orderBy: {
-      completedAt: "desc",
-    },
+    where: { userId, questionSetId, isCompleted: true },
+    orderBy: { completedAt: "desc" },
     include: {
-      questionSet: {
-        select: {
-          title: true,
-        },
-      },
+      questionSet: { select: { title: true } },
     },
   });
 }

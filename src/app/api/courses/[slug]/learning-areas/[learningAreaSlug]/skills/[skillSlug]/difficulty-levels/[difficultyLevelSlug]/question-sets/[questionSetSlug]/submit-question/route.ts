@@ -4,13 +4,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import authOptions from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getQuizAttempt } from "../quiz-attempt-helper";
 
 interface SubmitQuestionBody {
   questionSetId: number;
   questionId: number;
   answer: string;
   timeSpent: number;
-  quizAttemptId?: number; // Optional - for continuing existing attempt
+  quizAttemptId: number;
 }
 
 export async function POST(
@@ -52,12 +53,17 @@ export async function POST(
     }
 
     // Get the question with options
+    const quizAttempt = await getQuizAttempt(userId, quizAttemptId);
+    if (quizAttempt.questionSetId !== questionSetId) {
+      return NextResponse.json(
+        { error: "Quiz attempt does not match question set" },
+        { status: 400 }
+      );
+    }
+
     const question = await prisma.question.findUnique({
       where: { id: questionId },
-      include: {
-        options: true,
-        questionSet: true,
-      },
+      include: { options: true },
     });
 
     if (!question) {
@@ -85,31 +91,11 @@ export async function POST(
 
     const pointsEarned = isCorrect ? question.points : 0;
 
-    // Get or create quiz attempt
-    let attemptId = quizAttemptId;
-
-    if (!attemptId) {
-      // Create new quiz attempt (in-progress)
-      const newAttempt = await prisma.quizAttempt.create({
-        data: {
-          userId,
-          questionSetId,
-          earnedPoints: 0,
-          totalPoints: 0,
-          percentage: 0,
-          startedAt: new Date(),
-          timeSpent: 0,
-          isCompleted: false,
-        },
-      });
-      attemptId = newAttempt.id;
-    }
-
     // Check if answer already exists (update) or create new
     const existingAnswer = await prisma.questionAnswer.findFirst({
       where: {
         userId,
-        quizAttemptId: attemptId,
+        quizAttemptId,
         questionId,
       },
     });
@@ -130,7 +116,7 @@ export async function POST(
       await prisma.questionAnswer.create({
         data: {
           userId,
-          quizAttemptId: attemptId,
+          quizAttemptId,
           questionId,
           userAnswer: answer,
           isCorrect,
@@ -142,7 +128,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      quizAttemptId: attemptId,
+      quizAttemptId,
       isCorrect,
       pointsEarned,
       message: "Answer saved",

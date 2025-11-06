@@ -1,4 +1,4 @@
-// app/api/courses/[slug]/.../question-sets/[questionSetSlug]/finalize/route.ts
+// app/api/courses/[slug]/.../question-sets/[questionSetSlug]/submit-quiz/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";

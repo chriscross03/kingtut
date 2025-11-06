@@ -50,11 +50,6 @@ export default function QuizPage({
   } = useFetchSingleResource<QuestionSetWithQuestions>(
     `/api/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}`
   );
-  console.log(
-    `/api/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}`
-  );
-
-  console.log(fetchedQuestionSet);
 
   const questionSet = fetchedQuestionSet;
 
@@ -114,7 +109,7 @@ export default function QuizPage({
     });
   };
 
-  const handleNext = () => {
+  const handleSubmitQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
     }
@@ -126,12 +121,12 @@ export default function QuizPage({
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmitQuiz = async () => {
     setIsSubmitting(true);
 
     try {
       const response = await fetch(
-        `/api/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}/submit`,
+        `/api/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}/submit-quiz`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -223,10 +218,10 @@ export default function QuizPage({
           </div>
 
           {!isLastQuestion ? (
-            <NextButton onNext={handleNext} disabled={!canProceed} />
+            <NextButton onNext={handleSubmitQuestion} disabled={!canProceed} />
           ) : (
             <SubmitButton
-              onSubmit={handleSubmit}
+              onSubmit={handleSubmitQuiz}
               disabled={!canProceed || isSubmitting}
               isSubmitting={isSubmitting}
             />

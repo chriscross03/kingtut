@@ -53,7 +53,8 @@ function QuestionSetClient() {
   return (
     <div className="mt-6 flex flex-col items-start gap-4">
       <p className="text-lg text-gray-600">
-        {questionSet?.description || "Get ready to begin this question set."}
+        {questionSet?.description ||
+          "When you're ready, begin this question set."}
       </p>
 
       <button
