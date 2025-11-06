@@ -1,12 +1,17 @@
+"use client";
+
 import QuizPage from "../quiz-components/quiz-page";
+import { useParams } from "next/navigation";
 
 export default function Quizz() {
-  const params = {
-    slug: "course-slug",
-    learningAreaSlug: "learning-area-slug",
-    skillSlug: "skill-slug",
-    difficultyLevelSlug: "difficulty-level-slug",
-    questionSetSlug: "question-set-slug",
+  const rawParams = useParams();
+
+  const params = rawParams as {
+    slug: string;
+    learningAreaSlug: string;
+    skillSlug: string;
+    difficultyLevelSlug: string;
+    questionSetSlug: string;
   };
 
   return <QuizPage params={params} />;

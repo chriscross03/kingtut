@@ -54,6 +54,10 @@ export default function QuizPage({
 
   const questionSet = fetchedQuestionSet;
 
+  useEffect(() => {
+    setStartTime(Date.now());
+  }, [currentQuestionIndex]);
+
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error loading question set.</p>;
   if (!questionSet || !questionSet.questions) {
@@ -81,10 +85,6 @@ export default function QuizPage({
     })) || [];
 
   const currentQuestion = questions[currentQuestionIndex];
-  // Reset start time when question changes
-  useEffect(() => {
-    setStartTime(Date.now());
-  }, [currentQuestionIndex]);
 
   const handleAnswer = (answer: string | string[]) => {
     const timeSpent = Math.floor((Date.now() - startTime) / 1000);
