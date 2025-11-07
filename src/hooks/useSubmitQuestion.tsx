@@ -28,6 +28,12 @@ export function useSubmitQuestion() {
       questionSetSlug,
     } = params;
 
+    console.log(
+      `/api/courses/${courseSlug}/learning-areas/${learningAreaSlug}/skills/${skillSlug}/difficulty-levels/${difficultyLevelSlug}/question-sets/${questionSetSlug}/submit-question`
+    );
+    console.log(questionId);
+    console.log(answer);
+
     const response = await fetch(
       `/api/courses/${courseSlug}/learning-areas/${learningAreaSlug}/skills/${skillSlug}/difficulty-levels/${difficultyLevelSlug}/question-sets/${questionSetSlug}/submit-question`,
       {

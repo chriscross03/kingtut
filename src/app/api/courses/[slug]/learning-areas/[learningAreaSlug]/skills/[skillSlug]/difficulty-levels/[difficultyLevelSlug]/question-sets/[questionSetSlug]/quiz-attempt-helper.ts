@@ -6,6 +6,12 @@ import { NextResponse } from "next/server";
  */
 
 export async function getQuizAttemptWithDetails(quizAttemptId: number) {
+  if (!quizAttemptId) {
+    throw NextResponse.json(
+      { error: "Quiz attempt ID is required" },
+      { status: 400 }
+    );
+  }
   const quizAttempt = await prisma.quizAttempt.findUnique({
     where: { id: quizAttemptId },
     include: {
@@ -41,6 +47,13 @@ export async function getQuizAttemptWithDetails(quizAttemptId: number) {
 }
 
 export async function getQuizAttempt(userId: number, quizAttemptId: number) {
+  if (!quizAttemptId) {
+    throw NextResponse.json(
+      { error: "Quiz attempt ID is required" },
+      { status: 400 }
+    );
+  }
+
   const attempt = await prisma.quizAttempt.findUnique({
     where: { id: quizAttemptId },
   });

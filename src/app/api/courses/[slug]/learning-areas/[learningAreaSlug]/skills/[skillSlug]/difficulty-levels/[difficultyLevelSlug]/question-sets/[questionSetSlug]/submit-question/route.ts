@@ -43,9 +43,9 @@ export async function POST(
     const body: SubmitQuestionBody = await request.json();
     const { questionSetId, questionId, answer, timeSpent, quizAttemptId } =
       body;
-
     // Validate request
     if (!questionId || !answer) {
+      console.log("sigma sigma sigma");
       return NextResponse.json(
         { error: "Question ID and answer are required" },
         { status: 400 }
@@ -55,6 +55,8 @@ export async function POST(
     // Get the question with options
     const quizAttempt = await getQuizAttempt(userId, quizAttemptId);
     if (quizAttempt.questionSetId !== questionSetId) {
+      console.log("sigma");
+      console.log(quizAttempt.questionSetId);
       return NextResponse.json(
         { error: "Quiz attempt does not match question set" },
         { status: 400 }
