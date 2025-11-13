@@ -9,7 +9,7 @@ export default function QuizProgress({
   totalQuestions,
   answeredCount,
 }: QuizProgressProps) {
-  const progressPercentage = (currentQuestion / totalQuestions) * 100;
+  const progressPercentage = (answeredCount / totalQuestions) * 100;
   const completionPercentage = (answeredCount / totalQuestions) * 100;
 
   return (

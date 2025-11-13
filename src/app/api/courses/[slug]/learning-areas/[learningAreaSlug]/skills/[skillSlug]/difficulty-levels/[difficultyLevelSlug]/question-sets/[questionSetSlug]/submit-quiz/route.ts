@@ -1,4 +1,4 @@
-// app/api/courses/[slug]/.../question-sets/[questionSetSlug]/finalize/route.ts
+// app/api/courses/[slug]/.../question-sets/[questionSetSlug]/submit-quiz/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -38,6 +38,10 @@ export async function POST(
     const body: FinalizeQuizBody = await request.json();
     const { quizAttemptId } = body;
 
+    console.log("=== FINALIZE QUIZ DEBUG ===");
+    console.log("userId:", userId);
+    console.log("quizAttemptId:", quizAttemptId);
+
     if (!quizAttemptId) {
       return NextResponse.json(
         { error: "Quiz attempt ID is required" },
@@ -70,6 +74,7 @@ export async function POST(
     });
 
     if (!quizAttempt) {
+      console.error("Quiz attempt not found:", quizAttemptId);
       return NextResponse.json(
         { error: "Quiz attempt not found" },
         { status: 404 }
@@ -78,10 +83,15 @@ export async function POST(
 
     // Verify ownership
     if (quizAttempt.userId !== userId) {
+      console.error("User mismatch:", {
+        attemptUserId: quizAttempt.userId,
+        sessionUserId: userId,
+      });
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
     if (quizAttempt.isCompleted) {
+      console.warn("Quiz attempt already completed:", quizAttemptId);
       return NextResponse.json(
         { error: "Quiz attempt already finalized" },
         { status: 400 }
@@ -104,6 +114,14 @@ export async function POST(
       0
     );
 
+    console.log("Quiz statistics:", {
+      totalPoints,
+      pointsEarned,
+      percentage,
+      passed,
+      totalTimeSpent,
+    });
+
     // Update quiz attempt to completed
     const updatedAttempt = await prisma.quizAttempt.update({
       where: { id: quizAttemptId },
@@ -121,6 +139,8 @@ export async function POST(
     const skillId = quizAttempt.questionSet.difficultyLevel.skillId;
     await updateSkillProficiency(userId, skillId, percentage);
 
+    console.log("Quiz finalized successfully:", updatedAttempt.id);
+
     return NextResponse.json({
       success: true,
       submissionId: updatedAttempt.id,
@@ -135,7 +155,10 @@ export async function POST(
   } catch (error) {
     console.error("Error finalizing quiz:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

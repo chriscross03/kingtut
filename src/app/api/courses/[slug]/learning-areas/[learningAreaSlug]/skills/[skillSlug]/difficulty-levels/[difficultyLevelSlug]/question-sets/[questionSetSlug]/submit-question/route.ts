@@ -4,13 +4,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import authOptions from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getQuizAttempt } from "../quiz-attempt-helper";
 
 interface SubmitQuestionBody {
   questionSetId: number;
   questionId: number;
   answer: string;
   timeSpent: number;
-  quizAttemptId?: number; // Optional - for continuing existing attempt
+  quizAttemptId: number;
 }
 
 export async function POST(
@@ -38,26 +39,55 @@ export async function POST(
     }
 
     const userId = session.user.id;
-    const { questionSetSlug } = await params;
     const body: SubmitQuestionBody = await request.json();
     const { questionSetId, questionId, answer, timeSpent, quizAttemptId } =
       body;
-
     // Validate request
     if (!questionId || !answer) {
+      console.log("sigma sigma sigma");
       return NextResponse.json(
         { error: "Question ID and answer are required" },
         { status: 400 }
       );
     }
 
-    // Get the question with options
+    if (!quizAttemptId) {
+      console.error("Missing quizAttemptId");
+      return NextResponse.json(
+        { error: "Quiz attempt ID is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!questionSetId) {
+      console.error("Missing questionSetId");
+      return NextResponse.json(
+        { error: "Question set ID is required" },
+        { status: 400 }
+      );
+    }
+
+    let quizAttempt;
+    try {
+      quizAttempt = await getQuizAttempt(userId, quizAttemptId);
+    } catch (error) {
+      console.error("Error getting quiz attempt:", error);
+      return NextResponse.json(
+        { error: "Quiz attempt not found or invalid" },
+        { status: 404 }
+      );
+    }
+
+    if (quizAttempt.questionSetId !== questionSetId) {
+      return NextResponse.json(
+        { error: "Quiz attempt does not match question set" },
+        { status: 400 }
+      );
+    }
+
     const question = await prisma.question.findUnique({
       where: { id: questionId },
-      include: {
-        options: true,
-        questionSet: true,
-      },
+      include: { options: true },
     });
 
     if (!question) {
@@ -85,31 +115,11 @@ export async function POST(
 
     const pointsEarned = isCorrect ? question.points : 0;
 
-    // Get or create quiz attempt
-    let attemptId = quizAttemptId;
-
-    if (!attemptId) {
-      // Create new quiz attempt (in-progress)
-      const newAttempt = await prisma.quizAttempt.create({
-        data: {
-          userId,
-          questionSetId,
-          earnedPoints: 0,
-          totalPoints: 0,
-          percentage: 0,
-          startedAt: new Date(),
-          timeSpent: 0,
-          isCompleted: false,
-        },
-      });
-      attemptId = newAttempt.id;
-    }
-
     // Check if answer already exists (update) or create new
     const existingAnswer = await prisma.questionAnswer.findFirst({
       where: {
         userId,
-        quizAttemptId: attemptId,
+        quizAttemptId,
         questionId,
       },
     });
@@ -130,7 +140,7 @@ export async function POST(
       await prisma.questionAnswer.create({
         data: {
           userId,
-          quizAttemptId: attemptId,
+          quizAttemptId,
           questionId,
           userAnswer: answer,
           isCorrect,
@@ -142,7 +152,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      quizAttemptId: attemptId,
+      quizAttemptId,
       isCorrect,
       pointsEarned,
       message: "Answer saved",
@@ -150,7 +160,10 @@ export async function POST(
   } catch (error) {
     console.error("Error submitting question:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

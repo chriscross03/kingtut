@@ -14,6 +14,8 @@ import SubmitButton from "./question-nav-components/SubmitButton";
 import PreviousButton from "./question-nav-components/PreviousButton";
 import JumpToNavigation from "./question-nav-components/JumpNavigation";
 import NextButton from "./question-nav-components/NextButton";
+import { useSubmitQuestion } from "@/hooks/useSubmitQuestion";
+import BackLink from "@/components/BackLink";
 
 interface QuestionSetWithQuestions extends QuestionSet {
   questions: QuestionWithOptions[];
@@ -27,6 +29,7 @@ interface Answer {
 
 export default function QuizPage({
   params,
+  searchParams,
 }: {
   params: {
     slug: string;
@@ -35,12 +38,16 @@ export default function QuizPage({
     difficultyLevelSlug: string;
     questionSetSlug: string;
   };
+  searchParams: {
+    quizAttemptId: string;
+  };
 }) {
   const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { submitQuestion } = useSubmitQuestion();
 
   // Fetch question set
   const {
@@ -50,11 +57,6 @@ export default function QuizPage({
   } = useFetchSingleResource<QuestionSetWithQuestions>(
     `/api/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}`
   );
-  console.log(
-    `/api/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}`
-  );
-
-  console.log(fetchedQuestionSet);
 
   const questionSet = fetchedQuestionSet;
 
@@ -114,46 +116,114 @@ export default function QuizPage({
     });
   };
 
-  const handleNext = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
+  const handleSubmitQuestion = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      const question = questions[currentQuestionIndex];
+
+      // find the most recent answer object for this question
+      const userAnswer = answers.find((a) => a.questionId === question.id);
+
+      if (!userAnswer) {
+        console.warn("No answer provided for current question.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+      const quizAttemptId = parseInt(searchParams.quizAttemptId);
+
+      // Validate before sending
+      console.log(quizAttemptId);
+      if (isNaN(quizAttemptId)) {
+        console.error("Invalid quiz attempt ID:", searchParams.quizAttemptId);
+        alert("Invalid quiz session. Please refresh and try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log("Submitting question with data:", {
+        questionSetId: questionSet.id,
+        questionId: question.id,
+        quizAttemptId,
+        answerType: typeof userAnswer.answer,
+      });
+
+      const result = await submitQuestion({
+        questionSetId: questionSet.id,
+        questionId: question.id,
+        answer:
+          typeof userAnswer.answer === "string"
+            ? userAnswer.answer
+            : userAnswer.answer.join(","),
+        timeSpent,
+        quizAttemptId: parseInt(searchParams.quizAttemptId), // this is the next part we’ll address
+        courseSlug: params.slug,
+        learningAreaSlug: params.learningAreaSlug,
+        skillSlug: params.skillSlug,
+        difficultyLevelSlug: params.difficultyLevelSlug,
+        questionSetSlug: params.questionSetSlug,
+      });
+
+      console.log("Question submitted:", result);
+
+      // move to next question
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex((prev) => prev + 1);
+      }
+    } catch (error) {
+      console.error("Error submitting question:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex((prev) => prev - 1);
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmitQuiz = async () => {
     setIsSubmitting(true);
 
     try {
+      const quizAttemptId = parseInt(searchParams.quizAttemptId);
+
+      if (isNaN(quizAttemptId)) {
+        throw new Error("Invalid quiz attempt ID");
+      }
+
       const response = await fetch(
-        `/api/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}/submit`,
+        `/api/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}/submit-quiz`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            answers,
-            questionSetId: questionSet?.id,
+            quizAttemptId,
           }),
         }
       );
 
-      if (response.ok) {
-        const result = await response.json();
-        // Navigate to results page with submission ID
-        router.push(
-          `/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}/results?submissionId=${result.submissionId}`
-        );
-      } else {
-        throw new Error("Failed to submit quiz");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to submit quiz");
       }
+
+      const result = await response.json();
+
+      // Navigate to results page with submission ID
+      router.push(
+        `/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}/results?submissionId=${result.submissionId}`
+      );
     } catch (error) {
       console.error("Error submitting quiz:", error);
-      alert("Failed to submit quiz. Please try again.");
+      alert(
+        `Failed to submit quiz: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -194,6 +264,8 @@ export default function QuizPage({
       title={questionSet.title}
       subtitle={questionSet.description || ""}
     >
+      <BackLink href="/courses" label="back to courses" />
+
       <div className="max-w-4xl mx-auto">
         {/* Progress Bar */}
         <QuizProgress
@@ -223,10 +295,13 @@ export default function QuizPage({
           </div>
 
           {!isLastQuestion ? (
-            <NextButton onNext={handleNext} disabled={!canProceed} />
+            <NextButton onNext={handleSubmitQuestion} disabled={!canProceed} />
           ) : (
             <SubmitButton
-              onSubmit={handleSubmit}
+              onSubmit={async () => {
+                await handleSubmitQuestion();
+                await handleSubmitQuiz();
+              }}
               disabled={!canProceed || isSubmitting}
               isSubmitting={isSubmitting}
             />
