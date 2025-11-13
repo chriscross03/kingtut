@@ -54,7 +54,7 @@ export default function ResultsPage({
     async function fetchResults() {
       try {
         const response = await fetch(
-          `/api/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}/results?submissionId=${submissionId}`
+          `/api/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}/fetch-submission?submissionId=${submissionId}`
         );
 
         if (response.ok) {

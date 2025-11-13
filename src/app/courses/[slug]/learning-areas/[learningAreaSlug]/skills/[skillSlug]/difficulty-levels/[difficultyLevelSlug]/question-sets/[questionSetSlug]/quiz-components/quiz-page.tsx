@@ -189,30 +189,41 @@ export default function QuizPage({
     setIsSubmitting(true);
 
     try {
+      const quizAttemptId = parseInt(searchParams.quizAttemptId);
+
+      if (isNaN(quizAttemptId)) {
+        throw new Error("Invalid quiz attempt ID");
+      }
+
       const response = await fetch(
         `/api/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}/submit-quiz`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            answers,
-            questionSetId: questionSet?.id,
+            quizAttemptId,
           }),
         }
       );
 
-      if (response.ok) {
-        const result = await response.json();
-        // Navigate to results page with submission ID
-        router.push(
-          `/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}/results?submissionId=${result.submissionId}`
-        );
-      } else {
-        throw new Error("Failed to submit quiz");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to submit quiz");
       }
+
+      const result = await response.json();
+
+      // Navigate to results page with submission ID
+      router.push(
+        `/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}/quiz/results?submissionId=${result.submissionId}`
+      );
     } catch (error) {
       console.error("Error submitting quiz:", error);
-      alert("Failed to submit quiz. Please try again.");
+      alert(
+        `Failed to submit quiz: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -287,7 +298,10 @@ export default function QuizPage({
             <NextButton onNext={handleSubmitQuestion} disabled={!canProceed} />
           ) : (
             <SubmitButton
-              onSubmit={handleSubmitQuiz}
+              onSubmit={async () => {
+                await handleSubmitQuestion();
+                await handleSubmitQuiz();
+              }}
               disabled={!canProceed || isSubmitting}
               isSubmitting={isSubmitting}
             />

@@ -39,7 +39,6 @@ export async function POST(
     }
 
     const userId = session.user.id;
-    const { questionSetSlug } = await params;
     const body: SubmitQuestionBody = await request.json();
     const { questionSetId, questionId, answer, timeSpent, quizAttemptId } =
       body;
