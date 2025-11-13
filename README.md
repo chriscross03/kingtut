@@ -48,3 +48,4 @@ DATABASE_URL="file:./dev.db"
 - create user dashboard
 - maybe change up names? for pages and such
 - add user id to quiz attempt url
+- add hashing to user stuff
