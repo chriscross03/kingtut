@@ -47,3 +47,4 @@ DATABASE_URL="file:./dev.db"
 - find out if theres a way to clean up endpoints
 - create user dashboard
 - maybe change up names? for pages and such
+- add user id to quiz attempt url
