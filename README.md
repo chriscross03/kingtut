@@ -41,11 +41,17 @@ DATABASE_URL="file:./dev.db"
 
 
 ## TODO
+General
 - make the code readable/modular
 - figure out something to do with validation
 - figure out question generation/importation
 - find out if theres a way to clean up endpoints
-- create user dashboard
 - maybe change up names? for pages and such
+Hashing and Security
 - add user id to quiz attempt url
 - add hashing to user stuff
+Quiz Results Page
+- add more detail (user name + attempt #)
+- maybe show improvement graph?
+User Dashboard Page
+- create user dashboard to show stuff
