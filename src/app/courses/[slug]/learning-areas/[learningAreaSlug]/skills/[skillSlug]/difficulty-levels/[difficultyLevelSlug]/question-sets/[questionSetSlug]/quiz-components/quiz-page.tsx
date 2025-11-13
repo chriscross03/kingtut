@@ -215,7 +215,7 @@ export default function QuizPage({
 
       // Navigate to results page with submission ID
       router.push(
-        `/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}/quiz/results?submissionId=${result.submissionId}`
+        `/courses/${params.slug}/learning-areas/${params.learningAreaSlug}/skills/${params.skillSlug}/difficulty-levels/${params.difficultyLevelSlug}/question-sets/${params.questionSetSlug}/results?submissionId=${result.submissionId}`
       );
     } catch (error) {
       console.error("Error submitting quiz:", error);

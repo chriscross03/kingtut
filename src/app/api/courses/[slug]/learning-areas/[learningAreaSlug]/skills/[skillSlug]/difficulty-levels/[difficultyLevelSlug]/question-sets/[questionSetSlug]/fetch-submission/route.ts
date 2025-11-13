@@ -15,7 +15,6 @@ export async function GET(
       skillSlug: string;
       difficultyLevelSlug: string;
       questionSetSlug: string;
-      attemptId: string;
     }>;
   }
 ) {
@@ -23,7 +22,8 @@ export async function GET(
   if (!session?.user?.id)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { attemptId } = await params;
+  const { searchParams } = new URL(request.url);
+  const attemptId = searchParams.get("submissionId");
   const quizAttempt = await getQuizAttemptWithDetails(Number(attemptId));
 
   if (quizAttempt.userId !== session.user.id)
