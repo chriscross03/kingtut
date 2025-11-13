@@ -52,11 +52,34 @@ export async function POST(
       );
     }
 
-    // Get the question with options
-    const quizAttempt = await getQuizAttempt(userId, quizAttemptId);
+    if (!quizAttemptId) {
+      console.error("Missing quizAttemptId");
+      return NextResponse.json(
+        { error: "Quiz attempt ID is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!questionSetId) {
+      console.error("Missing questionSetId");
+      return NextResponse.json(
+        { error: "Question set ID is required" },
+        { status: 400 }
+      );
+    }
+
+    let quizAttempt;
+    try {
+      quizAttempt = await getQuizAttempt(userId, quizAttemptId);
+    } catch (error) {
+      console.error("Error getting quiz attempt:", error);
+      return NextResponse.json(
+        { error: "Quiz attempt not found or invalid" },
+        { status: 404 }
+      );
+    }
+
     if (quizAttempt.questionSetId !== questionSetId) {
-      console.log("sigma");
-      console.log(quizAttempt.questionSetId);
       return NextResponse.json(
         { error: "Quiz attempt does not match question set" },
         { status: 400 }
@@ -138,7 +161,10 @@ export async function POST(
   } catch (error) {
     console.error("Error submitting question:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

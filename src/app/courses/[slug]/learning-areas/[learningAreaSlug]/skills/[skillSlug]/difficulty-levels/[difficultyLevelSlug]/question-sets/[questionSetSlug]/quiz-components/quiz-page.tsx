@@ -29,6 +29,7 @@ interface Answer {
 
 export default function QuizPage({
   params,
+  searchParams,
 }: {
   params: {
     slug: string;
@@ -36,6 +37,8 @@ export default function QuizPage({
     skillSlug: string;
     difficultyLevelSlug: string;
     questionSetSlug: string;
+  };
+  searchParams: {
     quizAttemptId: string;
   };
 }) {
@@ -130,6 +133,23 @@ export default function QuizPage({
       }
 
       const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+      const quizAttemptId = parseInt(searchParams.quizAttemptId);
+
+      // Validate before sending
+      console.log(quizAttemptId);
+      if (isNaN(quizAttemptId)) {
+        console.error("Invalid quiz attempt ID:", searchParams.quizAttemptId);
+        alert("Invalid quiz session. Please refresh and try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log("Submitting question with data:", {
+        questionSetId: questionSet.id,
+        questionId: question.id,
+        quizAttemptId,
+        answerType: typeof userAnswer.answer,
+      });
 
       const result = await submitQuestion({
         questionSetId: questionSet.id,
@@ -139,7 +159,7 @@ export default function QuizPage({
             ? userAnswer.answer
             : userAnswer.answer.join(","),
         timeSpent,
-        quizAttemptId: parseInt(params.quizAttemptId), // this is the next part we’ll address
+        quizAttemptId: parseInt(searchParams.quizAttemptId), // this is the next part we’ll address
         courseSlug: params.slug,
         learningAreaSlug: params.learningAreaSlug,
         skillSlug: params.skillSlug,
