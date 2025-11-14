@@ -11,6 +11,7 @@ import { useResourceData } from "../../hooks/useResourceData";
 import { useFormData } from "../../hooks/useFormData";
 import BackLink from "@/components/BackLink";
 import { useAdminResourceData } from "../../hooks/useAdminResourceData";
+import Link from "next/link";
 
 type ContentType =
   | "course"
@@ -370,6 +371,27 @@ export default function AdminPage() {
       <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
         {renderForm()}
         {renderItemsList()}
+      </div>
+
+      <div className="mt-8 flex justify-center">
+        <Link
+          href="/admin/generate-questions"
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+              clipRule="evenodd"
+            />
+          </svg>
+          Generate Questions with AI
+        </Link>
       </div>
     </div>
   );
